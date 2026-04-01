@@ -1,9 +1,11 @@
 package com.pixelfort.towerdefense.feature.game.ui
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,10 +24,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -36,8 +34,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.pixelfort.towerdefense.engine.GameState
-import com.pixelfort.towerdefense.engine.model.MetaBonus
 import com.pixelfort.towerdefense.engine.model.EnemyType
+import com.pixelfort.towerdefense.engine.model.MetaBonus
 import com.pixelfort.towerdefense.engine.model.PlayerState
 import com.pixelfort.towerdefense.engine.model.Tower
 import com.pixelfort.towerdefense.engine.model.TowerType
@@ -67,10 +65,9 @@ fun HudOverlay(
     onSelectTower: (TowerType?) -> Unit,
     onStartWave: () -> Unit,
     onPause: () -> Unit,
+    onShowTooltip: (TowerType) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    var tooltipTower by remember { mutableStateOf<TowerType?>(null) }
-
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -148,22 +145,15 @@ fun HudOverlay(
                             onSelectTower(if (isSelected) null else towerType)
                         }
                     },
-                    onInfo = { tooltipTower = towerType }
+                    onLongPress = { onShowTooltip(towerType) },
+                    onInfoTap = { onShowTooltip(towerType) }
                 )
             }
-        }
-
-        // Tooltip popup
-        tooltipTower?.let { tt ->
-            TowerTooltip(
-                towerType = tt,
-                metaBonus = metaBonus,
-                onDismiss = { tooltipTower = null }
-            )
         }
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun TowerHudButton(
     towerType: TowerType,
@@ -171,10 +161,10 @@ private fun TowerHudButton(
     isSelected: Boolean,
     canAfford: Boolean,
     onSelect: () -> Unit,
-    onInfo: () -> Unit
+    onLongPress: () -> Unit,
+    onInfoTap: () -> Unit
 ) {
     val baseColor = towerHudColor[towerType] ?: Color.Gray
-    val dimColor = baseColor.copy(alpha = 0.35f)
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -196,7 +186,11 @@ private fun TowerHudButton(
                 },
                 shape = RoundedCornerShape(8.dp)
             )
-            .clickable(enabled = isUnlocked) { onSelect() }
+            .combinedClickable(
+                enabled = true,
+                onClick = { onSelect() },
+                onLongClick = { onLongPress() }
+            )
             .padding(4.dp)
     ) {
         // Mini tower canvas preview
@@ -218,7 +212,6 @@ private fun TowerHudButton(
                     )
                 }
             } else {
-                // Locked: dark background with lock icon
                 Box(
                     modifier = Modifier
                         .matchParentSize()
@@ -260,7 +253,7 @@ private fun TowerHudButton(
             )
         }
 
-        // Info button
+        // Info button (tap shows tooltip without selecting tower)
         Text(
             text = "ⓘ",
             color = Color(0xFF7788AA),
@@ -268,72 +261,7 @@ private fun TowerHudButton(
             textAlign = TextAlign.Center,
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable { onInfo() }
+                .clickable { onInfoTap() }
         )
     }
-}
-
-@Composable
-private fun TowerTooltip(
-    towerType: TowerType,
-    metaBonus: MetaBonus,
-    onDismiss: () -> Unit
-) {
-    val stats = towerType.statsForLevel(1, metaBonus)
-    val isUnlocked = !towerType.isLockedByDefault || towerType in metaBonus.unlockedTowers
-
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 8.dp, vertical = 2.dp)
-            .background(Color(0xFF1E1E3A), RoundedCornerShape(10.dp))
-            .border(1.dp, Color(0xFF3344AA), RoundedCornerShape(10.dp))
-            .clickable { onDismiss() }
-            .padding(10.dp)
-    ) {
-        Column {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = towerType.nameZh,
-                        color = Color.White,
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    if (!isUnlocked) {
-                        Spacer(Modifier.width(6.dp))
-                        Text("🔒 場外升級解鎖", color = Color(0xFFFFD700), fontSize = 11.sp)
-                    }
-                }
-                Text("✕", color = Color(0xFF7788AA), fontSize = 14.sp)
-            }
-            Spacer(Modifier.height(4.dp))
-            Text(
-                text = towerType.descZh,
-                color = Color(0xFFAABBCC),
-                fontSize = 12.sp
-            )
-            Spacer(Modifier.height(6.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                StatChip("⚔ ${stats.damage}", Color(0xFFEF5350))
-                StatChip("🎯 ${"%.1f".format(stats.range)}", Color(0xFF42A5F5))
-                StatChip("⚡ ${stats.fireRateMs}ms", Color(0xFFFFEE58))
-                StatChip("💰 ${towerType.baseCost}g", Color(0xFFFFD700))
-            }
-        }
-    }
-}
-
-@Composable
-private fun StatChip(text: String, color: Color) {
-    Text(
-        text = text,
-        color = color,
-        fontSize = 11.sp,
-        fontWeight = FontWeight.Medium
-    )
 }
