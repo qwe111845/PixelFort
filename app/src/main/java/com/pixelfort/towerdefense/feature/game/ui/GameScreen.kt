@@ -110,6 +110,7 @@ fun GameScreen(
                             map = map,
                             cellSize = state.cellSize,
                             particles = state.particles,
+                            floatingTexts = state.floatingTexts,
                             selectedTowerId = state.selectedTowerId,
                             onCellTapped = viewModel::onCellTapped,
                             modifier = Modifier.size(gameWidthDp, gameHeightDp)

@@ -26,10 +26,11 @@ sealed interface GameEvent {
 
     data class LivesLost(val enemyId: Int, val remainingLives: Int) : GameEvent
 
-    /** Fired when a projectile hits — used to spawn VFX particles */
+    /** Fired when a projectile hits — used to spawn VFX particles + damage text */
     data class ProjectileHit(
         val pixelX: Float, val pixelY: Float,
-        val effect: TowerEffect
+        val effect: TowerEffect,
+        val damage: Int = 0
     ) : GameEvent
 
     /** Fired each time a chain lightning jumps */

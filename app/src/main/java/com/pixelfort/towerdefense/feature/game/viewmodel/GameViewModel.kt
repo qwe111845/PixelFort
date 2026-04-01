@@ -9,6 +9,7 @@ import com.pixelfort.towerdefense.engine.action.GameAction
 import com.pixelfort.towerdefense.engine.level.Levels
 import com.pixelfort.towerdefense.engine.model.MetaBonus
 import com.pixelfort.towerdefense.engine.model.TowerType
+import com.pixelfort.towerdefense.feature.game.vfx.FloatingTextSystem
 import com.pixelfort.towerdefense.feature.game.vfx.ParticleSystem
 import com.pixelfort.towerdefense.feature.metaupgrade.domain.MetaUpgradeRepository
 import com.pixelfort.towerdefense.feature.progress.domain.ProgressRepository
@@ -31,6 +32,7 @@ class GameViewModel @Inject constructor(
     private val levelId: Int = savedStateHandle.get<Int>("levelId") ?: 1
 
     private val particleSystem = ParticleSystem()
+    private val floatingTextSystem = FloatingTextSystem()
     private var metaBonus = MetaBonus()
     private var engine: GameEngine? = null
     private var currentCellSize: Float = 80f
@@ -135,6 +137,8 @@ class GameViewModel @Inject constructor(
                 // Process VFX events
                 particleSystem.processEvents(snapshot.events, currentCellSize)
                 particleSystem.update(deltaMs)
+                floatingTextSystem.processEvents(snapshot.events)
+                floatingTextSystem.update(deltaMs)
 
                 emitState()
 
@@ -162,6 +166,7 @@ class GameViewModel @Inject constructor(
             selectedTowerType = selectedTowerType,
             selectedTowerId = selectedTowerId,
             particles = particleSystem.activeParticles,
+            floatingTexts = floatingTextSystem.activeTexts,
             metaBonus = metaBonus,
             cellSize = currentCellSize
         )
