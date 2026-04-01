@@ -19,9 +19,14 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -34,9 +39,12 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.pixelfort.towerdefense.engine.GameState
 import com.pixelfort.towerdefense.engine.level.Levels
+import com.pixelfort.towerdefense.engine.model.MetaBonus
 import com.pixelfort.towerdefense.engine.model.Tower
+import com.pixelfort.towerdefense.engine.model.TowerType
 import com.pixelfort.towerdefense.feature.game.viewmodel.GameUiState
 import com.pixelfort.towerdefense.feature.game.viewmodel.GameViewModel
+import kotlinx.coroutines.delay
 
 @Composable
 fun GameScreen(
@@ -48,6 +56,18 @@ fun GameScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val map = Levels.getById(levelId).map
     val density = LocalDensity.current
+
+    // Floating tooltip state
+    var tooltipTower by remember { mutableStateOf<TowerType?>(null) }
+    var tooltipMetaBonus by remember { mutableStateOf(MetaBonus()) }
+
+    // Auto-dismiss tooltip after 4 seconds
+    LaunchedEffect(tooltipTower) {
+        if (tooltipTower != null) {
+            delay(4000L)
+            tooltipTower = null
+        }
+    }
 
     BoxWithConstraints(
         modifier = Modifier
@@ -140,7 +160,11 @@ fun GameScreen(
                         wavePreview = state.snapshot.wavePreview,
                         onSelectTower = viewModel::selectTowerType,
                         onStartWave = viewModel::startWave,
-                        onPause = viewModel::pause
+                        onPause = viewModel::pause,
+                        onShowTooltip = { towerType ->
+                            tooltipTower = towerType
+                            tooltipMetaBonus = state.metaBonus
+                        }
                     )
                 }
             }
@@ -200,6 +224,18 @@ fun GameScreen(
                     )
                 }
             }
+        }
+
+        // ── Floating Tower Tooltip (over everything, does NOT affect layout) ──
+        tooltipTower?.let { tt ->
+            FloatingTowerTooltip(
+                towerType = tt,
+                metaBonus = tooltipMetaBonus,
+                onDismiss = { tooltipTower = null },
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = hudHeightDp + 4.dp)
+            )
         }
     }
 }
@@ -463,6 +499,71 @@ private fun TowerInfoPopup(
                 modifier = Modifier.weight(1f),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFC62828))
             ) { Text("出售 ${tower.sellValue}g", fontSize = 13.sp) }
+        }
+    }
+}
+
+@Composable
+private fun FloatingTowerTooltip(
+    towerType: TowerType,
+    metaBonus: MetaBonus,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val stats = towerType.statsForLevel(1, metaBonus)
+    val isUnlocked = !towerType.isLockedByDefault || towerType in metaBonus.unlockedTowers
+
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp)
+            .background(Color(0xEE1A1A2E), RoundedCornerShape(12.dp))
+            .border(1.dp, Color(0xFF3355AA), RoundedCornerShape(12.dp))
+            .clickable { onDismiss() }
+            .padding(14.dp)
+    ) {
+        Column {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = towerType.nameZh,
+                        color = Color.White,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    if (!isUnlocked) {
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            "🔒 需要場外升級解鎖",
+                            color = Color(0xFFFFD700),
+                            fontSize = 11.sp
+                        )
+                    }
+                }
+                Text(
+                    "✕",
+                    color = Color(0xFF7788AA),
+                    fontSize = 15.sp,
+                    modifier = Modifier.clickable { onDismiss() }
+                )
+            }
+            Spacer(Modifier.height(6.dp))
+            Text(
+                text = towerType.descZh,
+                color = Color(0xFFAABBCC),
+                fontSize = 13.sp
+            )
+            Spacer(Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                Text("⚔ ${stats.damage}", color = Color(0xFFEF5350), fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                Text("🎯 ${"%.1f".format(stats.range)}", color = Color(0xFF42A5F5), fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                Text("⚡ ${stats.fireRateMs}ms", color = Color(0xFFFFEE58), fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                Text("💰 ${towerType.baseCost}g", color = Color(0xFFFFD700), fontSize = 12.sp, fontWeight = FontWeight.Medium)
+            }
         }
     }
 }
