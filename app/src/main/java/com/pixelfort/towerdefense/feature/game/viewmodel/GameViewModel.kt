@@ -59,6 +59,18 @@ class GameViewModel @Inject constructor(
         startGameLoop()
     }
 
+    fun toggleSpeed() {
+        val eng = engine ?: return
+        val current = eng.snapshot().speedMultiplier
+        val next = when {
+            current < 1.5f -> 2f
+            current < 2.5f -> 3f
+            else -> 1f
+        }
+        eng.processAction(GameAction.SetSpeed(next))
+        emitState()
+    }
+
     fun selectTowerType(type: TowerType?) {
         selectedTowerType = type
         selectedTowerId = null

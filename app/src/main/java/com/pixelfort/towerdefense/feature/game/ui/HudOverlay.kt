@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.pixelfort.towerdefense.engine.GameState
 import com.pixelfort.towerdefense.engine.model.MetaBonus
+import com.pixelfort.towerdefense.engine.model.EnemyType
 import com.pixelfort.towerdefense.engine.model.PlayerState
 import com.pixelfort.towerdefense.engine.model.Tower
 import com.pixelfort.towerdefense.engine.model.TowerType
@@ -62,6 +63,7 @@ fun HudOverlay(
     totalWaves: Int,
     selectedTowerType: TowerType?,
     metaBonus: MetaBonus,
+    wavePreview: List<Pair<EnemyType, Int>> = emptyList(),
     onSelectTower: (TowerType?) -> Unit,
     onStartWave: () -> Unit,
     onPause: () -> Unit,
@@ -74,6 +76,37 @@ fun HudOverlay(
             .fillMaxWidth()
             .background(Color(0xFF0D0D1A))
     ) {
+        // Wave preview
+        if (gameState == GameState.WaitingForWave && wavePreview.isNotEmpty()) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 4.dp)
+                    .background(Color(0xFF161630), RoundedCornerShape(6.dp))
+                    .padding(horizontal = 10.dp, vertical = 6.dp),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "下一波：",
+                    color = Color(0xFF8899AA),
+                    fontSize = 12.sp
+                )
+                Spacer(Modifier.width(4.dp))
+                wavePreview.forEachIndexed { index, (enemyType, count) ->
+                    if (index > 0) {
+                        Text("  ", fontSize = 12.sp)
+                    }
+                    Text(
+                        text = "${enemyType.nameZh} x$count",
+                        color = Color.White,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            }
+        }
+
         // Wave start button
         if (gameState == GameState.WaitingForWave) {
             Button(

@@ -48,17 +48,19 @@ class GameEngine(
     private var waveSpawningComplete = false
     private var starsEarned  = -1
     private var rpEarned     = 0
+    private var speedMultiplier = 1f
 
     fun update(deltaMs: Long) {
         if (state != GameState.Playing) return
         eventBus.clear()
+        val scaledDelta = (deltaMs * speedMultiplier).toLong()
 
         // 1. Status effects (slow decay, poison ticks)
-        val statusResult = statusSystem.update(enemies, deltaMs)
+        val statusResult = statusSystem.update(enemies, scaledDelta)
         enemies = statusResult.updatedEnemies.toMutableList()
 
         // 2. Wave spawning
-        val spawnResult = waveSpawner.update(deltaMs, nextEnemyId)
+        val spawnResult = waveSpawner.update(scaledDelta, nextEnemyId)
         spawnResult.spawnedEnemies.forEach { e ->
             enemies.add(e.copy(reward = (e.reward * metaBonus.goldRewardMultiplier).toInt()))
             nextEnemyId = e.id + 1
@@ -66,15 +68,15 @@ class GameEngine(
         if (spawnResult.waveSpawningComplete) waveSpawningComplete = true
 
         // 3. Enemy movement (uses effectiveSpeed which respects slows)
-        enemies = movementSystem.moveAll(enemies, deltaMs).toMutableList()
+        enemies = movementSystem.moveAll(enemies, scaledDelta).toMutableList()
 
         // 4. Tower targeting
-        val targetResult = targetingSystem.update(towers, enemies, deltaMs)
+        val targetResult = targetingSystem.update(towers, enemies, scaledDelta)
         towers = targetResult.updatedTowers.toMutableList()
         projectiles.addAll(targetResult.projectiles)
 
         // 5. Projectile resolution (AoE, chain, slow, poison application)
-        val projResult = projectileSystem.update(projectiles, enemies, deltaMs, statusSystem)
+        val projResult = projectileSystem.update(projectiles, enemies, scaledDelta, statusSystem)
         projectiles = (projResult.remainingProjectiles + projResult.newChainProjectiles).toMutableList()
         enemies = projResult.damagedEnemies.toMutableList()
 
@@ -106,6 +108,12 @@ class GameEngine(
     }
 
     fun processAction(action: GameAction): Boolean {
+        // SetSpeed doesn't need validation
+        if (action is GameAction.SetSpeed) {
+            speedMultiplier = action.multiplier.coerceIn(1f, 3f)
+            return true
+        }
+
         val valid = actionProcessor.validate(action, playerState, towers, metaBonus)
         if (!valid.isValid) return false
 
@@ -143,26 +151,40 @@ class GameEngine(
                     state = GameState.Playing
                 }
             }
+            is GameAction.SetSpeed -> { /* handled above, unreachable */ }
         }
         return true
     }
 
-    fun pause()  { if (state == GameState.Playing) state = GameState.Paused }
+    fun pause() {
+        if (state == GameState.Playing) {
+            state = GameState.Paused
+            speedMultiplier = 1f
+        }
+    }
     fun resume() { if (state == GameState.Paused)  state = GameState.Playing }
 
     fun snapshot() = GameSnapshot(
-        state         = state,
-        towers        = towers.toList(),
-        enemies       = enemies.toList(),
-        projectiles   = projectiles.toList(),
-        playerState   = playerState,
-        currentWave   = playerState.currentWave,
-        totalWaves    = level.waves.size,
-        events        = eventBus.events,
-        metaBonus     = metaBonus,
-        starsEarned   = starsEarned,
-        rpEarned      = rpEarned
+        state           = state,
+        towers          = towers.toList(),
+        enemies         = enemies.toList(),
+        projectiles     = projectiles.toList(),
+        playerState     = playerState,
+        currentWave     = playerState.currentWave,
+        totalWaves      = level.waves.size,
+        events          = eventBus.events,
+        metaBonus       = metaBonus,
+        starsEarned     = starsEarned,
+        rpEarned        = rpEarned,
+        speedMultiplier = speedMultiplier,
+        wavePreview     = buildWavePreview()
     )
+
+    private fun buildWavePreview(): List<Pair<com.pixelfort.towerdefense.engine.model.EnemyType, Int>> {
+        val waveIdx = playerState.currentWave
+        if (waveIdx >= level.waves.size) return emptyList()
+        return level.waves[waveIdx].groups.map { it.enemyType to it.count }
+    }
 
     private fun checkWinLoseConditions() {
         if (playerState.isGameOver) {
@@ -196,6 +218,7 @@ class GameEngine(
                 eventBus.emit(GameEvent.GameWon)
             } else {
                 state = GameState.WaitingForWave
+                speedMultiplier = 1f
             }
         }
     }

@@ -97,6 +97,12 @@ core/                      <- Infrastructure (Room, DataStore, Sound)
 ```
 Dependency direction: outer -> inner. Inner layers know nothing about outer layers.
 
+### Sealed Interface Exhaustiveness Rule
+- **ALWAYS** ensure `when` expressions on sealed interfaces are exhaustive
+- When adding a new variant to a sealed interface (e.g., `GameAction`, `GameEvent`, `GameState`), you **MUST** update every `when` expression that matches on that sealed type
+- Use the Kotlin compiler's exhaustive check — never use `else` branches on sealed types unless explicitly justified
+- Write a compile-guard test that lists all variants to catch future omissions
+
 ---
 
 ## Project Structure
