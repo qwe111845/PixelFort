@@ -28,9 +28,12 @@ Each spec file (`SPEC-NNN-*.md`) contains: requirements, DDD analysis, TDD/BDD t
    d. Clean Architecture: Ensure layer boundaries respected
 4. All tests pass -> ask user: "Does this meet the spec requirements?"
 5. User confirms -> commit with descriptive message + push to GitHub
-6. Update spec/README.md: mark SPEC-NNN as COMPLETED
-7. Wait for user to specify next spec (or new spec version)
-8. Go to 1
+6. Create PR via `gh pr create` with Summary + Changes + Tests sections
+7. Merge PR via `gh pr merge --merge`
+8. Sync local master: git checkout master && git pull origin master
+9. Update spec/README.md: mark SPEC-NNN as COMPLETED
+10. Wait for user to specify next spec (or new spec version)
+11. Go to 1
 ```
 
 ### Rules
