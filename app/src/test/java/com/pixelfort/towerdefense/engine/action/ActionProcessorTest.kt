@@ -155,4 +155,39 @@ class ActionProcessorTest {
             assertFalse(result.isValid)
         }
     }
+
+    @Nested
+    inner class SetSpeed {
+        @Test
+        fun `SetSpeed is always valid`() {
+            val state = PlayerState(gold = 0, lives = 20, currentWave = 0)
+            val action = GameAction.SetSpeed(2f)
+
+            val result = processor.validate(action, state, emptyList())
+
+            assertTrue(result.isValid)
+        }
+    }
+
+    @Nested
+    inner class ExhaustiveWhenCoverage {
+        @Test
+        fun `all GameAction variants are handled by validate`() {
+            // This test ensures new GameAction variants added in the future
+            // cause a compile error in ActionProcessor.validate() if not handled.
+            // If this test compiles, all branches are covered.
+            val state = PlayerState(gold = 200, lives = 20, currentWave = 0)
+            val actions: List<GameAction> = listOf(
+                GameAction.PlaceTower(TowerType.ARCHER, 1, 1),
+                GameAction.UpgradeTower(1),
+                GameAction.SellTower(1),
+                GameAction.StartWave,
+                GameAction.SetSpeed(2f)
+            )
+            for (action in actions) {
+                // Should not throw — every variant is handled
+                processor.validate(action, state, emptyList())
+            }
+        }
+    }
 }

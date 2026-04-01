@@ -14,4 +14,6 @@ sealed interface GameAction {
     data class SellTower(val towerId: Int) : GameAction
 
     data object StartWave : GameAction
+
+    data class SetSpeed(val multiplier: Float) : GameAction
 }

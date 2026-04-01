@@ -82,7 +82,9 @@ fun GameScreen(
                         lives = state.snapshot.playerState.lives,
                         currentWave = state.snapshot.currentWave,
                         totalWaves = state.snapshot.totalWaves,
+                        speedMultiplier = state.snapshot.speedMultiplier,
                         onPause = viewModel::pause,
+                        onToggleSpeed = viewModel::toggleSpeed,
                         modifier = Modifier.height(topBarHeightDp)
                     )
                 }
@@ -134,6 +136,7 @@ fun GameScreen(
                         totalWaves = state.snapshot.totalWaves,
                         selectedTowerType = state.selectedTowerType,
                         metaBonus = state.metaBonus,
+                        wavePreview = state.snapshot.wavePreview,
                         onSelectTower = viewModel::selectTowerType,
                         onStartWave = viewModel::startWave,
                         onPause = viewModel::pause
@@ -206,45 +209,68 @@ private fun TopInfoBar(
     lives: Int,
     currentWave: Int,
     totalWaves: Int,
+    speedMultiplier: Float = 1f,
     onPause: () -> Unit,
+    onToggleSpeed: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
+    val speedLabel = when {
+        speedMultiplier >= 2.5f -> "▶▶▶"
+        speedMultiplier >= 1.5f -> "▶▶"
+        else -> "▶"
+    }
+    val speedColor = when {
+        speedMultiplier >= 2.5f -> Color(0xFFFF5722)
+        speedMultiplier >= 1.5f -> Color(0xFFFFD700)
+        else -> Color(0xFFBBCCDD)
+    }
+
     Row(
         modifier = modifier
             .fillMaxWidth()
             .background(Color(0xFF0D0D1A))
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+            .padding(horizontal = 12.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         // Gold
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("💰", fontSize = 16.sp)
-            Spacer(Modifier.width(4.dp))
+            Text("💰", fontSize = 14.sp)
+            Spacer(Modifier.width(2.dp))
             Text(
                 text = "$gold",
                 color = Color(0xFFFFD700),
-                fontSize = 16.sp,
+                fontSize = 15.sp,
                 fontWeight = FontWeight.Bold
             )
         }
         // Lives
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("❤️", fontSize = 16.sp)
-            Spacer(Modifier.width(4.dp))
+            Text("❤️", fontSize = 14.sp)
+            Spacer(Modifier.width(2.dp))
             Text(
                 text = "$lives",
                 color = Color(0xFFEF5350),
-                fontSize = 16.sp,
+                fontSize = 15.sp,
                 fontWeight = FontWeight.Bold
             )
         }
         // Wave indicator
         Text(
-            text = "第 ${currentWave + 1} / $totalWaves 波",
+            text = "第 ${currentWave + 1}/$totalWaves 波",
             color = Color(0xFFBBCCDD),
-            fontSize = 14.sp
+            fontSize = 13.sp
         )
+        // Speed button
+        Button(
+            onClick = onToggleSpeed,
+            modifier = Modifier.size(36.dp),
+            contentPadding = PaddingValues(0.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1A3050)),
+            shape = RoundedCornerShape(6.dp)
+        ) {
+            Text(speedLabel, fontSize = 11.sp, color = speedColor)
+        }
         // Pause button
         Button(
             onClick = onPause,

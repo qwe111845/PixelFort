@@ -7,6 +7,8 @@ import com.pixelfort.towerdefense.engine.model.PlayerState
 import com.pixelfort.towerdefense.engine.model.Projectile
 import com.pixelfort.towerdefense.engine.model.Tower
 
+import com.pixelfort.towerdefense.engine.model.EnemyType
+
 data class GameSnapshot(
     val state: GameState,
     val towers: List<Tower>,
@@ -20,5 +22,9 @@ data class GameSnapshot(
     /** Stars earned (1-3) when game is won, -1 otherwise */
     val starsEarned: Int = -1,
     /** Research points earned this run */
-    val rpEarned: Int = 0
+    val rpEarned: Int = 0,
+    /** Current game speed multiplier (1.0 / 2.0 / 3.0) */
+    val speedMultiplier: Float = 1f,
+    /** Next wave enemy composition: list of (EnemyType, count) */
+    val wavePreview: List<Pair<EnemyType, Int>> = emptyList()
 )
