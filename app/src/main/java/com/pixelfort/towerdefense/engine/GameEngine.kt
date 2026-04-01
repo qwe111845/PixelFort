@@ -82,7 +82,7 @@ class GameEngine(
 
         // Emit hit VFX events
         projResult.hitEvents.forEach { h ->
-            eventBus.emit(GameEvent.ProjectileHit(h.pixelX, h.pixelY, h.effect))
+            eventBus.emit(GameEvent.ProjectileHit(h.pixelX, h.pixelY, h.effect, h.damage))
         }
 
         // 6. Enemy death

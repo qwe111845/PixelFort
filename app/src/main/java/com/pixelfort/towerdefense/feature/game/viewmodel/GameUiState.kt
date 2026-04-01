@@ -3,6 +3,7 @@ package com.pixelfort.towerdefense.feature.game.viewmodel
 import com.pixelfort.towerdefense.engine.GameSnapshot
 import com.pixelfort.towerdefense.engine.model.MetaBonus
 import com.pixelfort.towerdefense.engine.model.TowerType
+import com.pixelfort.towerdefense.feature.game.vfx.FloatingText
 import com.pixelfort.towerdefense.feature.game.vfx.Particle
 
 sealed interface GameUiState {
@@ -13,6 +14,7 @@ sealed interface GameUiState {
         val selectedTowerType: TowerType? = null,
         val selectedTowerId: Int? = null,
         val particles: List<Particle> = emptyList(),
+        val floatingTexts: List<FloatingText> = emptyList(),
         val metaBonus: MetaBonus = MetaBonus(),
         val cellSize: Float = 80f
     ) : GameUiState

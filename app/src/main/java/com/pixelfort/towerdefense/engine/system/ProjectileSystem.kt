@@ -11,7 +11,8 @@ class ProjectileSystem(private val cellSize: Float) {
     data class HitEvent(
         val pixelX: Float,
         val pixelY: Float,
-        val effect: TowerEffect
+        val effect: TowerEffect,
+        val damage: Int = 0
     )
 
     data class Result(
@@ -40,7 +41,7 @@ class ProjectileSystem(private val cellSize: Float) {
             if (target == null) continue   // target gone
 
             if (proj.hasReachedTarget(target.pixelX, target.pixelY, cellSize)) {
-                hitEvents.add(HitEvent(target.pixelX, target.pixelY, proj.effect))
+                hitEvents.add(HitEvent(target.pixelX, target.pixelY, proj.effect, proj.damage))
                 applyHit(proj, target, enemies, directDamageMap, effectsToApply, chainProjectiles)
             } else {
                 remaining.add(moveToward(proj, target.pixelX, target.pixelY, deltaMs))
