@@ -7,6 +7,7 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import com.pixelfort.towerdefense.engine.model.CellType
 import com.pixelfort.towerdefense.engine.model.GameMap
+import com.pixelfort.towerdefense.engine.model.GridPoint
 
 object MapRenderer {
 
@@ -51,5 +52,62 @@ object MapRenderer {
                     style = Stroke(cellSize * 0.025f))
             }
         }
+
+        // Entry marker (green arrow)
+        val entry = map.startPoint
+        drawEntryMarker(entry, map, cellSize)
+
+        // Exit marker (red X)
+        val exit = map.endPoint
+        drawExitMarker(exit, cellSize)
+    }
+
+    private fun DrawScope.drawEntryMarker(entry: GridPoint, map: GameMap, cellSize: Float) {
+        val cx = entry.col * cellSize + cellSize / 2
+        val cy = entry.row * cellSize + cellSize / 2
+        val s = cellSize * 0.3f
+        val green = Color(0xFF66BB6A)
+
+        // Determine arrow direction based on next waypoint
+        val waypoints = map.pathWaypoints
+        if (waypoints.size < 2) return
+        val next = waypoints[1]
+        val dx = next.col - entry.col
+        val dy = next.row - entry.row
+
+        // Draw arrow pointing in movement direction
+        when {
+            dx > 0 -> { // right
+                drawLine(green, Offset(cx - s, cy), Offset(cx + s, cy), s * 0.5f)
+                drawLine(green, Offset(cx + s * 0.5f, cy - s * 0.6f), Offset(cx + s, cy), s * 0.4f)
+                drawLine(green, Offset(cx + s * 0.5f, cy + s * 0.6f), Offset(cx + s, cy), s * 0.4f)
+            }
+            dx < 0 -> { // left
+                drawLine(green, Offset(cx + s, cy), Offset(cx - s, cy), s * 0.5f)
+                drawLine(green, Offset(cx - s * 0.5f, cy - s * 0.6f), Offset(cx - s, cy), s * 0.4f)
+                drawLine(green, Offset(cx - s * 0.5f, cy + s * 0.6f), Offset(cx - s, cy), s * 0.4f)
+            }
+            dy > 0 -> { // down
+                drawLine(green, Offset(cx, cy - s), Offset(cx, cy + s), s * 0.5f)
+                drawLine(green, Offset(cx - s * 0.6f, cy + s * 0.5f), Offset(cx, cy + s), s * 0.4f)
+                drawLine(green, Offset(cx + s * 0.6f, cy + s * 0.5f), Offset(cx, cy + s), s * 0.4f)
+            }
+            else -> { // up
+                drawLine(green, Offset(cx, cy + s), Offset(cx, cy - s), s * 0.5f)
+                drawLine(green, Offset(cx - s * 0.6f, cy - s * 0.5f), Offset(cx, cy - s), s * 0.4f)
+                drawLine(green, Offset(cx + s * 0.6f, cy - s * 0.5f), Offset(cx, cy - s), s * 0.4f)
+            }
+        }
+    }
+
+    private fun DrawScope.drawExitMarker(exit: GridPoint, cellSize: Float) {
+        val cx = exit.col * cellSize + cellSize / 2
+        val cy = exit.row * cellSize + cellSize / 2
+        val s = cellSize * 0.25f
+        val red = Color(0xFFEF5350)
+
+        // Draw red X
+        drawLine(red, Offset(cx - s, cy - s), Offset(cx + s, cy + s), s * 0.4f)
+        drawLine(red, Offset(cx + s, cy - s), Offset(cx - s, cy + s), s * 0.4f)
     }
 }
