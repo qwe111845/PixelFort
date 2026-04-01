@@ -57,33 +57,32 @@ object Levels {
     )
 
     // ──────────────────────────────────────────────────────────
-    // LEVEL 2 — Desert Ruins  (9×14, U + fork path)
+    // LEVEL 2 — Desert Ruins  (9×14, U-shaped path)
+    //   Entry: (0,1) → right → down → left → down → right → down → Exit: (13,4)
     // ──────────────────────────────────────────────────────────
     val level2 = LevelDefinition(
         id = 2, name = "沙漠廢墟",
         map = GameMap(
             rows = 14, cols = 9,
             grid = listOf(
-                listOf(BLOCKED, PATH,     PATH,     PATH,     PATH,     PATH,     PATH,     BLOCKED, BLOCKED),
-                listOf(BLOCKED, PATH,     BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,PATH,     BLOCKED, BLOCKED),
-                listOf(BLOCKED, PATH,     BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,PATH,     BLOCKED, BLOCKED),
-                listOf(BLOCKED, PATH,     BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,PATH,     PATH,    PATH),
-                listOf(BLOCKED, PATH,     BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,PATH),
-                listOf(PATH,    PATH,     BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,PATH),
-                listOf(PATH,    BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,PATH),
-                listOf(PATH,    BUILDABLE,BUILDABLE,PATH,     PATH,     PATH,     BUILDABLE,BUILDABLE,PATH),
-                listOf(PATH,    BUILDABLE,BUILDABLE,PATH,     BUILDABLE,PATH,     BUILDABLE,BUILDABLE,PATH),
-                listOf(PATH,    PATH,     PATH,     PATH,     BUILDABLE,PATH,     PATH,     PATH,    PATH),
-                listOf(BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE),
-                listOf(BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE),
-                listOf(BLOCKED, BLOCKED,  PATH,     PATH,     PATH,     PATH,     BLOCKED,  BLOCKED, BLOCKED),
-                listOf(BLOCKED, BLOCKED,  BLOCKED,  BLOCKED,  PATH,     BLOCKED,  BLOCKED,  BLOCKED, BLOCKED),
+                /*r0 */ listOf(BLOCKED,  PATH,     PATH,     PATH,     PATH,     PATH,     PATH,     PATH,     BLOCKED),
+                /*r1 */ listOf(BLOCKED,  BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,PATH,     BLOCKED),
+                /*r2 */ listOf(BLOCKED,  BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,PATH,     BLOCKED),
+                /*r3 */ listOf(BLOCKED,  BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,PATH,     BLOCKED),
+                /*r4 */ listOf(BLOCKED,  BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,PATH,     BLOCKED),
+                /*r5 */ listOf(PATH,     PATH,     PATH,     PATH,     PATH,     PATH,     PATH,     PATH,     BLOCKED),
+                /*r6 */ listOf(PATH,     BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,BLOCKED),
+                /*r7 */ listOf(PATH,     BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,BLOCKED),
+                /*r8 */ listOf(PATH,     PATH,     PATH,     PATH,     PATH,     BUILDABLE,BUILDABLE,BUILDABLE,BLOCKED),
+                /*r9 */ listOf(BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,PATH,     BUILDABLE,BUILDABLE,BUILDABLE,BLOCKED),
+                /*r10*/ listOf(BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,PATH,     BUILDABLE,BUILDABLE,BUILDABLE,BLOCKED),
+                /*r11*/ listOf(BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,PATH,     BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE),
+                /*r12*/ listOf(BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,PATH,     BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE),
+                /*r13*/ listOf(BLOCKED,  BLOCKED,  BLOCKED,  BLOCKED,  PATH,     BLOCKED,  BLOCKED,  BLOCKED,  BLOCKED),
             ),
             pathWaypoints = listOf(
-                GridPoint(0,1), GridPoint(0,6), GridPoint(5,6), GridPoint(5,0),
-                GridPoint(9,0), GridPoint(9,8), GridPoint(3,8), GridPoint(3,6),
-                GridPoint(7,6), GridPoint(7,3), GridPoint(9,3), GridPoint(9,4),
-                GridPoint(12,4), GridPoint(13,4)
+                GridPoint(0,1), GridPoint(0,7), GridPoint(5,7), GridPoint(5,0),
+                GridPoint(8,0), GridPoint(8,4), GridPoint(13,4)
             )
         ),
         waves = listOf(
@@ -114,37 +113,35 @@ object Levels {
     )
 
     // ──────────────────────────────────────────────────────────
-    // LEVEL 3 — Frozen Fortress  (10×16, spiral + multiple straights)
+    // LEVEL 3 — Frozen Fortress  (10×16, spiral path)
+    //   Entry: (0,2) → right → down → left → down → right → down → right → down → Exit: (15,8)
     // ──────────────────────────────────────────────────────────
     val level3 = LevelDefinition(
         id = 3, name = "冰雪要塞",
         map = GameMap(
             rows = 16, cols = 10,
             grid = listOf(
-                listOf(BLOCKED, BLOCKED, PATH,    PATH,    PATH,    PATH,    PATH,    BLOCKED, BLOCKED, BLOCKED),
-                listOf(BLOCKED, BLOCKED, BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,PATH,BLOCKED, BLOCKED, BLOCKED),
-                listOf(BLOCKED, BLOCKED, BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,PATH,BLOCKED, BLOCKED, BLOCKED),
-                listOf(PATH,    PATH,    PATH,    BUILDABLE,BUILDABLE,BUILDABLE,PATH, PATH,    PATH,    BLOCKED),
-                listOf(PATH,    BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,PATH,BLOCKED),
-                listOf(PATH,    BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,PATH,BLOCKED),
-                listOf(PATH,    PATH,    PATH,    PATH,    BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,PATH, BLOCKED),
-                listOf(BLOCKED, BLOCKED, BLOCKED, PATH,    BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,PATH, BLOCKED),
-                listOf(BLOCKED, BLOCKED, BLOCKED, PATH,    PATH,    PATH,    BUILDABLE,BUILDABLE,PATH,  BLOCKED),
-                listOf(BLOCKED, PATH,    PATH,    PATH,    BUILDABLE,PATH,    BUILDABLE,BUILDABLE,PATH,  BLOCKED),
-                listOf(BLOCKED, PATH,    BUILDABLE,BUILDABLE,BUILDABLE,PATH,  PATH,    PATH,    PATH,    BLOCKED),
-                listOf(BLOCKED, PATH,    BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE),
-                listOf(BLOCKED, PATH,    PATH,    BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE),
-                listOf(BLOCKED, BLOCKED, PATH,    PATH,    PATH,    BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE),
-                listOf(BLOCKED, BLOCKED, BLOCKED, BLOCKED, PATH,    BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE),
-                listOf(BLOCKED, BLOCKED, BLOCKED, BLOCKED, PATH,    BLOCKED,  BLOCKED,  BLOCKED,  BLOCKED,  BLOCKED),
+                /*r0 */ listOf(BLOCKED,  BLOCKED,  PATH,     PATH,     PATH,     PATH,     PATH,     PATH,     BLOCKED,  BLOCKED),
+                /*r1 */ listOf(BLOCKED,  BLOCKED,  BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,PATH,     BLOCKED,  BLOCKED),
+                /*r2 */ listOf(BLOCKED,  BLOCKED,  BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,PATH,     BLOCKED,  BLOCKED),
+                /*r3 */ listOf(BLOCKED,  BLOCKED,  BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,PATH,     BLOCKED,  BLOCKED),
+                /*r4 */ listOf(BLOCKED,  BLOCKED,  BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,PATH,     BLOCKED,  BLOCKED),
+                /*r5 */ listOf(PATH,     PATH,     PATH,     PATH,     PATH,     PATH,     PATH,     PATH,     BLOCKED,  BLOCKED),
+                /*r6 */ listOf(PATH,     BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,BLOCKED,  BLOCKED),
+                /*r7 */ listOf(PATH,     BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,BLOCKED,  BLOCKED),
+                /*r8 */ listOf(PATH,     PATH,     PATH,     BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,BLOCKED,  BLOCKED),
+                /*r9 */ listOf(BLOCKED,  BLOCKED,  PATH,     BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,BLOCKED,  BLOCKED),
+                /*r10*/ listOf(BLOCKED,  BLOCKED,  PATH,     BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,BLOCKED,  BLOCKED),
+                /*r11*/ listOf(BLOCKED,  BLOCKED,  PATH,     PATH,     PATH,     PATH,     PATH,     BUILDABLE,BLOCKED,  BLOCKED),
+                /*r12*/ listOf(BLOCKED,  BLOCKED,  BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,PATH,     BUILDABLE,BLOCKED,  BLOCKED),
+                /*r13*/ listOf(BLOCKED,  BLOCKED,  BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,PATH,     PATH,     PATH,     BLOCKED),
+                /*r14*/ listOf(BLOCKED,  BLOCKED,  BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,BUILDABLE,PATH,     BLOCKED),
+                /*r15*/ listOf(BLOCKED,  BLOCKED,  BLOCKED,  BLOCKED,  BLOCKED,  BLOCKED,  BLOCKED,  BLOCKED,  PATH,     BLOCKED),
             ),
             pathWaypoints = listOf(
-                GridPoint(0,2),  GridPoint(0,6),  GridPoint(3,6),  GridPoint(3,0),
-                GridPoint(6,0),  GridPoint(6,3),  GridPoint(9,3),  GridPoint(9,1),
-                GridPoint(12,1), GridPoint(12,2), GridPoint(13,2), GridPoint(13,4),
-                GridPoint(10,4), GridPoint(10,6), GridPoint(8,6),  GridPoint(8,8),
-                GridPoint(3,8),  GridPoint(3,7),  GridPoint(4,7),  GridPoint(4,8),
-                GridPoint(11,8), GridPoint(11,9), GridPoint(15,4)
+                GridPoint(0,2), GridPoint(0,7), GridPoint(5,7), GridPoint(5,0),
+                GridPoint(8,0), GridPoint(8,2), GridPoint(11,2), GridPoint(11,6),
+                GridPoint(13,6), GridPoint(13,8), GridPoint(15,8)
             )
         ),
         waves = listOf(
