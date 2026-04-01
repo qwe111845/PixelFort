@@ -131,6 +131,7 @@ fun GameScreen(
                             cellSize = state.cellSize,
                             particles = state.particles,
                             floatingTexts = state.floatingTexts,
+                            screenShake = state.screenShake,
                             selectedTowerId = state.selectedTowerId,
                             onCellTapped = viewModel::onCellTapped,
                             modifier = Modifier.size(gameWidthDp, gameHeightDp)
@@ -180,6 +181,15 @@ fun GameScreen(
                 PauseOverlay(
                     onResume = viewModel::resume,
                     onQuit = onBack
+                )
+            }
+
+            // Flash effect overlay
+            if (state.flashEffect.isActive) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(state.flashEffect.color.copy(alpha = state.flashEffect.alpha))
                 )
             }
 

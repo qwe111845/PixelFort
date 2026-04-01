@@ -9,8 +9,12 @@ import com.pixelfort.towerdefense.engine.action.GameAction
 import com.pixelfort.towerdefense.engine.level.Levels
 import com.pixelfort.towerdefense.engine.model.MetaBonus
 import com.pixelfort.towerdefense.engine.model.TowerType
+import com.pixelfort.towerdefense.engine.event.GameEvent
+import com.pixelfort.towerdefense.engine.model.TowerEffect
+import com.pixelfort.towerdefense.feature.game.vfx.FlashEffect
 import com.pixelfort.towerdefense.feature.game.vfx.FloatingTextSystem
 import com.pixelfort.towerdefense.feature.game.vfx.ParticleSystem
+import com.pixelfort.towerdefense.feature.game.vfx.ScreenShake
 import com.pixelfort.towerdefense.feature.metaupgrade.domain.MetaUpgradeRepository
 import com.pixelfort.towerdefense.feature.progress.domain.ProgressRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -33,6 +37,8 @@ class GameViewModel @Inject constructor(
 
     private val particleSystem = ParticleSystem()
     private val floatingTextSystem = FloatingTextSystem()
+    private var screenShake = ScreenShake.IDLE
+    private var flashEffect = FlashEffect.NONE
     private var metaBonus = MetaBonus()
     private var engine: GameEngine? = null
     private var currentCellSize: Float = 80f
@@ -139,6 +145,7 @@ class GameViewModel @Inject constructor(
                 particleSystem.update(deltaMs)
                 floatingTextSystem.processEvents(snapshot.events)
                 floatingTextSystem.update(deltaMs)
+                processShakeAndFlash(snapshot.events, deltaMs)
 
                 emitState()
 
@@ -159,6 +166,35 @@ class GameViewModel @Inject constructor(
         }
     }
 
+    private fun processShakeAndFlash(events: List<GameEvent>, deltaMs: Long) {
+        for (event in events) {
+            when (event) {
+                is GameEvent.LivesLost -> {
+                    screenShake = screenShake.trigger(12f, 300L)
+                    flashEffect = flashEffect.trigger(
+                        androidx.compose.ui.graphics.Color(0xFFEF5350), 200L
+                    )
+                }
+                is GameEvent.ProjectileHit -> {
+                    if (event.effect is TowerEffect.AoeSplash && event.damage >= 80) {
+                        screenShake = screenShake.trigger(8f, 200L)
+                        flashEffect = flashEffect.trigger(
+                            androidx.compose.ui.graphics.Color.White, 50L
+                        )
+                    }
+                }
+                is GameEvent.EnemyKilled -> {
+                    if (event.reward >= 50) {
+                        screenShake = screenShake.trigger(16f, 400L)
+                    }
+                }
+                else -> Unit
+            }
+        }
+        screenShake = screenShake.update(deltaMs)
+        flashEffect = flashEffect.update(deltaMs)
+    }
+
     private fun emitState() {
         val eng = engine ?: return
         _uiState.value = GameUiState.Playing(
@@ -167,6 +203,8 @@ class GameViewModel @Inject constructor(
             selectedTowerId = selectedTowerId,
             particles = particleSystem.activeParticles,
             floatingTexts = floatingTextSystem.activeTexts,
+            screenShake = screenShake,
+            flashEffect = flashEffect,
             metaBonus = metaBonus,
             cellSize = currentCellSize
         )
