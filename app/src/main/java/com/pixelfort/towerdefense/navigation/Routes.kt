@@ -10,7 +10,11 @@ sealed interface Routes {
     data object LevelSelect : Routes
 
     @Serializable
-    data class Game(val levelId: Int) : Routes
+    data class Game(
+        val levelId: Int,
+        val difficulty: String = "NORMAL",
+        val isEndless: Boolean = false
+    ) : Routes
 
     @Serializable
     data object Settings : Routes

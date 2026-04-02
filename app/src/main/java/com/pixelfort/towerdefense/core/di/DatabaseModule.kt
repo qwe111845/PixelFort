@@ -3,6 +3,7 @@ package com.pixelfort.towerdefense.core.di
 import android.content.Context
 import androidx.room.Room
 import com.pixelfort.towerdefense.core.database.AppDatabase
+import com.pixelfort.towerdefense.core.database.dao.EndlessHighScoreDao
 import com.pixelfort.towerdefense.core.database.dao.MetaUpgradeDao
 import com.pixelfort.towerdefense.core.database.dao.ProgressDao
 import dagger.Module
@@ -28,4 +29,7 @@ object DatabaseModule {
 
     @Provides
     fun provideMetaUpgradeDao(db: AppDatabase): MetaUpgradeDao = db.metaUpgradeDao()
+
+    @Provides
+    fun provideEndlessHighScoreDao(db: AppDatabase): EndlessHighScoreDao = db.endlessHighScoreDao()
 }
