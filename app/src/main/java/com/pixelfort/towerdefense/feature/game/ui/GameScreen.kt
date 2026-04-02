@@ -54,7 +54,6 @@ import com.pixelfort.towerdefense.engine.level.Levels
 import com.pixelfort.towerdefense.engine.model.MetaBonus
 import com.pixelfort.towerdefense.engine.model.Tower
 import com.pixelfort.towerdefense.engine.model.TowerType
-import com.pixelfort.towerdefense.core.datastore.GameplaySettingsData
 import com.pixelfort.towerdefense.feature.game.viewmodel.GameUiState
 import com.pixelfort.towerdefense.feature.game.viewmodel.GameViewModel
 import kotlinx.coroutines.delay
@@ -62,31 +61,15 @@ import kotlinx.coroutines.delay
 @Composable
 fun GameScreen(
     levelId: Int,
+    difficulty: String = "NORMAL",
+    isEndless: Boolean = false,
     onBack: () -> Unit,
     onGoToUpgrades: () -> Unit,
     viewModel: GameViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val gameplaySettings by viewModel.gameplaySettingsFlow.collectAsStateWithLifecycle(initialValue = GameplaySettingsData())
     val map = Levels.getById(levelId).map
     val density = LocalDensity.current
-
-    // FPS counter state
-    var fpsText by remember { mutableStateOf("") }
-    var frameCount by remember { mutableStateOf(0) }
-    var lastFpsTime by remember { mutableStateOf(System.currentTimeMillis()) }
-
-    LaunchedEffect(uiState) {
-        if (gameplaySettings.showFpsCounter) {
-            frameCount++
-            val now = System.currentTimeMillis()
-            if (now - lastFpsTime >= 1000L) {
-                fpsText = "$frameCount FPS"
-                frameCount = 0
-                lastFpsTime = now
-            }
-        }
-    }
 
     // Floating tooltip state
     var tooltipTower by remember { mutableStateOf<TowerType?>(null) }
@@ -255,21 +238,6 @@ fun GameScreen(
                 )
             }
 
-            // FPS counter overlay
-            if (gameplaySettings.showFpsCounter && fpsText.isNotEmpty()) {
-                Text(
-                    text = fpsText,
-                    color = Color(0xFF00FF00),
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(top = statusBarPadding + 4.dp, end = 8.dp)
-                        .background(Color.Black.copy(alpha = 0.5f), RoundedCornerShape(4.dp))
-                        .padding(horizontal = 6.dp, vertical = 2.dp)
-                )
-            }
-
             // Victory overlay
             if (snapshot.state == GameState.Won) {
                 GameEndOverlay(
@@ -287,6 +255,9 @@ fun GameScreen(
                     isVictory = false,
                     starsEarned = 0,
                     rpEarned = 0,
+                    isEndless = snapshot.isEndless,
+                    wavesReached = snapshot.currentWave,
+                    totalKills = snapshot.totalKills,
                     onBack = onBack,
                     onGoToUpgrades = onGoToUpgrades
                 )
@@ -382,7 +353,7 @@ private fun TopInfoBar(
         }
         // Wave indicator
         Text(
-            text = "第 ${currentWave + 1}/$totalWaves 波",
+            text = if (totalWaves == Int.MAX_VALUE) "第 ${currentWave + 1} 波" else "第 ${currentWave + 1}/$totalWaves 波",
             color = Color(0xFFBBCCDD),
             fontSize = 13.sp
         )
@@ -455,6 +426,9 @@ private fun GameEndOverlay(
     isVictory: Boolean,
     starsEarned: Int,
     rpEarned: Int,
+    isEndless: Boolean = false,
+    wavesReached: Int = 0,
+    totalKills: Int = 0,
     onBack: () -> Unit,
     onGoToUpgrades: () -> Unit
 ) {
@@ -495,8 +469,8 @@ private fun GameEndOverlay(
             }
 
             Text(
-                text = if (isVictory) "🏆 勝利！" else "💀 失敗",
-                color = if (isVictory) Color(0xFFFFD700) else Color(0xFFEF5350),
+                text = if (isEndless) "無盡模式結束" else if (isVictory) "勝利！" else "失敗",
+                color = if (isVictory) Color(0xFFFFD700) else if (isEndless) Color(0xFFCE93D8) else Color(0xFFEF5350),
                 fontSize = 32.sp,
                 fontWeight = FontWeight.Bold
             )

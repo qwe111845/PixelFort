@@ -17,7 +17,8 @@ private val Context.settingsDataStore: DataStore<Preferences> by preferencesData
 data class GameplaySettingsData(
     val screenShakeEnabled: Boolean = true,
     val damageNumbersEnabled: Boolean = true,
-    val showFpsCounter: Boolean = false
+    val showFpsCounter: Boolean = false,
+    val tutorialCompleted: Boolean = false
 )
 
 @Singleton
@@ -27,12 +28,14 @@ class SettingsDataStore @Inject constructor(
     private val screenShakeKey = booleanPreferencesKey("screen_shake_enabled")
     private val damageNumbersKey = booleanPreferencesKey("damage_numbers_enabled")
     private val showFpsKey = booleanPreferencesKey("show_fps_counter")
+    private val tutorialCompletedKey = booleanPreferencesKey("tutorial_completed")
 
     val settingsFlow: Flow<GameplaySettingsData> = context.settingsDataStore.data.map { prefs ->
         GameplaySettingsData(
             screenShakeEnabled = prefs[screenShakeKey] ?: true,
             damageNumbersEnabled = prefs[damageNumbersKey] ?: true,
-            showFpsCounter = prefs[showFpsKey] ?: false
+            showFpsCounter = prefs[showFpsKey] ?: false,
+            tutorialCompleted = prefs[tutorialCompletedKey] ?: false
         )
     }
 
@@ -46,5 +49,9 @@ class SettingsDataStore @Inject constructor(
 
     suspend fun setShowFpsCounter(enabled: Boolean) {
         context.settingsDataStore.edit { it[showFpsKey] = enabled }
+    }
+
+    suspend fun setTutorialCompleted(completed: Boolean) {
+        context.settingsDataStore.edit { it[tutorialCompletedKey] = completed }
     }
 }
