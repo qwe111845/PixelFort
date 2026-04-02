@@ -56,7 +56,7 @@
 | SPEC-014 | Screen Shake + Impact Juice | COMPLETED | feature/014-screen-shake |
 | SPEC-015 | Boss Mechanics | READY | - |
 | SPEC-016 | Difficulty Modes + Endless Mode | READY | - |
-| SPEC-017 | Audio System | READY | - |
+| SPEC-017 | Audio System | COMPLETED | feature/017-audio-system |
 | SPEC-018 | Settings Screen | READY | - |
 | SPEC-019 | Tutorial System | READY | - |
 | SPEC-020 | Tower Placement Preview + Turret Rotation | READY | - |
