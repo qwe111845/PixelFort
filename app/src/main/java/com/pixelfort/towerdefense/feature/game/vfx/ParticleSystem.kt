@@ -137,6 +137,18 @@ class ParticleSystem {
         }
     }
 
+    /** SPEC-030: Gold sparkle burst when a tower is sold. */
+    fun emitSellBurst(x: Float, y: Float) {
+        repeat(12) {
+            val angle = Random.nextFloat() * 360f
+            val speed = Random.nextFloat() * 100f + 40f
+            emit(x, y,
+                cos(Math.toRadians(angle.toDouble())).toFloat() * speed,
+                sin(Math.toRadians(angle.toDouble())).toFloat() * speed - 50f,
+                Color(0xFFFFD700), Random.nextFloat() * 3f + 2f, 700L, ParticleType.STAR)
+        }
+    }
+
     private fun emit(
         x: Float, y: Float, vx: Float, vy: Float,
         color: Color, size: Float, lifeMs: Long, type: ParticleType

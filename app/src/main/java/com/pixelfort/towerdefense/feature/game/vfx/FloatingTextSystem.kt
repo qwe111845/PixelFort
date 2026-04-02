@@ -74,6 +74,16 @@ class FloatingTextSystem {
         )
     }
 
+    /** SPEC-030: Emit a sell refund text like "+60g" at the sold tower position. */
+    fun emitSellText(x: Float, y: Float, refundAmount: Int) {
+        emit(
+            x, y - 10f,
+            "+${refundAmount}g",
+            Color(0xFFFFD700), 16f, 1200L,
+            vy = -70f
+        )
+    }
+
     private fun emit(
         x: Float, y: Float, text: String, color: Color,
         fontSize: Float, lifeMs: Long,

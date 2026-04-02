@@ -28,11 +28,13 @@ import com.pixelfort.towerdefense.feature.game.renderer.TowerRenderer.drawGhostT
 import com.pixelfort.towerdefense.feature.game.renderer.TowerRenderer.drawTowers
 import com.pixelfort.towerdefense.feature.game.renderer.VfxRenderer.drawAmbientParticles
 import com.pixelfort.towerdefense.feature.game.renderer.VfxRenderer.drawParticles
+import com.pixelfort.towerdefense.feature.game.renderer.VfxRenderer.drawSellEffects
 import com.pixelfort.towerdefense.feature.game.vfx.AmbientParticle
 import com.pixelfort.towerdefense.feature.game.vfx.DeathFlash
 import com.pixelfort.towerdefense.feature.game.vfx.FloatingText
 import com.pixelfort.towerdefense.feature.game.vfx.Particle
 import com.pixelfort.towerdefense.feature.game.vfx.ScreenShake
+import com.pixelfort.towerdefense.feature.game.vfx.SellEffect
 import com.pixelfort.towerdefense.feature.game.vfx.TrailSystem
 
 @Composable
@@ -47,6 +49,7 @@ fun GameCanvas(
     trailSystem: TrailSystem? = null,
     ambientParticles: List<AmbientParticle> = emptyList(),
     deathFlashes: List<DeathFlash> = emptyList(),
+    sellEffects: List<SellEffect> = emptyList(),
     selectedTowerId: Int?,
     selectedTowerType: TowerType? = null,
     spriteLoader: SpriteAssetLoader? = null,
@@ -95,6 +98,7 @@ fun GameCanvas(
             drawEnemies(snapshot.enemies, cellSize, spriteLoader, elapsedMs, deathFlashes)
             drawProjectiles(snapshot.projectiles, trailSystem)
             drawParticles(particles)
+            drawSellEffects(sellEffects)
 
             // Ghost tower preview when a tower type is selected
             if (selectedTowerType != null) {

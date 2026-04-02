@@ -179,6 +179,7 @@ fun GameScreen(
                                 trailSystem = state.trailSystem,
                                 ambientParticles = state.ambientParticles,
                                 deathFlashes = state.deathFlashes,
+                                sellEffects = state.sellEffects,
                                 selectedTowerId = state.selectedTowerId,
                                 selectedTowerType = state.selectedTowerType,
                                 spriteLoader = viewModel.spriteLoader,
@@ -335,8 +336,9 @@ fun GameScreen(
                         tower = selectedTower,
                         canAffordUpgrade = snapshot.playerState.canAfford(selectedTower.upgradeCost),
                         activeCombos = towerCombos,
+                        isSellConfirming = state.sellConfirmTowerId == selectedTower.id,
                         onUpgrade = viewModel::upgradeTower,
-                        onSell = viewModel::sellTower,
+                        onSell = viewModel::onSellTapped,
                         onDismiss = { viewModel.selectTowerType(null) }
                     )
                 }
@@ -597,6 +599,7 @@ private fun TowerInfoPopup(
     tower: Tower,
     canAffordUpgrade: Boolean,
     activeCombos: List<ActiveCombo> = emptyList(),
+    isSellConfirming: Boolean = false,
     onUpgrade: () -> Unit,
     onSell: () -> Unit,
     onDismiss: () -> Unit,
@@ -676,8 +679,15 @@ private fun TowerInfoPopup(
             Button(
                 onClick = onSell,
                 modifier = Modifier.weight(1f),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFC62828))
-            ) { Text("出售 ${tower.sellValue}g", fontSize = 13.sp) }
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (isSellConfirming) Color(0xFFFF6F00) else Color(0xFFC62828)
+                )
+            ) {
+                Text(
+                    text = if (isSellConfirming) "確認出售?" else "出售 ${tower.sellValue}g",
+                    fontSize = 13.sp
+                )
+            }
         }
     }
 }

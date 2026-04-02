@@ -7,6 +7,7 @@ import com.pixelfort.towerdefense.feature.game.vfx.AmbientParticle
 import com.pixelfort.towerdefense.feature.game.vfx.AmbientType
 import com.pixelfort.towerdefense.feature.game.vfx.Particle
 import com.pixelfort.towerdefense.feature.game.vfx.ParticleType
+import com.pixelfort.towerdefense.feature.game.vfx.SellEffect
 
 object VfxRenderer {
 
@@ -27,6 +28,24 @@ object VfxRenderer {
                     drawCircle(color, half, Offset(p.x, p.y))
                 }
             }
+        }
+    }
+
+    /**
+     * SPEC-030: Draw sell dissolve effects (fading gold circle with scale shrink).
+     */
+    fun DrawScope.drawSellEffects(effects: List<SellEffect>) {
+        for (effect in effects) {
+            val radius = 20f * effect.scale
+            val goldColor = androidx.compose.ui.graphics.Color(0xFFFFD700).copy(alpha = effect.alpha)
+            // Outer glow
+            drawCircle(
+                goldColor.copy(alpha = effect.alpha * 0.3f),
+                radius * 2f,
+                Offset(effect.x, effect.y)
+            )
+            // Inner circle
+            drawCircle(goldColor, radius, Offset(effect.x, effect.y))
         }
     }
 
