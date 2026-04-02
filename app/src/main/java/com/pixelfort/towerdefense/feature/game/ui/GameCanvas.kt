@@ -53,7 +53,7 @@ fun GameCanvas(
         val shakeY = screenShake.offsetY
         translate(shakeX, shakeY) {
             drawMap(map, cellSize)
-            drawTowers(snapshot.towers, cellSize, selectedTowerId, spriteLoader)
+            drawTowers(snapshot.towers, cellSize, selectedTowerId, spriteLoader, elapsedMs)
             drawEnemies(snapshot.enemies, cellSize, spriteLoader, elapsedMs)
             drawProjectiles(snapshot.projectiles)
             drawParticles(particles)

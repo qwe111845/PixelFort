@@ -40,7 +40,8 @@ object TowerRenderer {
         towers: List<Tower>,
         cellSize: Float,
         selectedTowerId: Int?,
-        spriteLoader: SpriteAssetLoader? = null
+        spriteLoader: SpriteAssetLoader? = null,
+        elapsedMs: Long = 0L
     ) {
         for (tower in towers) {
             val cx = tower.gridCol * cellSize + cellSize / 2f
@@ -65,7 +66,17 @@ object TowerRenderer {
             // Try PNG sprite first, fall back to procedural
             val sprite = spriteLoader?.getTowerSprite(tower.type, tower.level)
             if (sprite != null) {
-                val spriteSize = (cellSize * 0.85f).toInt()
+                // Idle breathing: subtle scale oscillation
+                val breathScale = 1f + 0.02f * kotlin.math.sin(elapsedMs * Math.PI / 1000.0).toFloat()
+
+                // Attack pulse: brief scale spike on fire (check cooldown)
+                val fireRateMs = tower.stats.fireRateMs.toLong()
+                val cooldownPct = tower.cooldownRemainingMs.toFloat() / fireRateMs.coerceAtLeast(1)
+                val justFired = cooldownPct > 0.9f
+                val attackScale = if (justFired) 1.12f else 1f
+
+                val finalScale = breathScale * attackScale
+                val spriteSize = (cellSize * 0.85f * finalScale).toInt()
                 drawImage(
                     image = sprite,
                     srcOffset = IntOffset.Zero,
