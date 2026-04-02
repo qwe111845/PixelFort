@@ -57,7 +57,7 @@
 | SPEC-015 | Boss Mechanics | READY | - |
 | SPEC-016 | Difficulty Modes + Endless Mode | READY | - |
 | SPEC-017 | Audio System | COMPLETED | feature/017-audio-system |
-| SPEC-018 | Settings Screen | READY | - |
+| SPEC-018 | Settings Screen | COMPLETED | feature/018-settings-screen |
 | SPEC-019 | Tutorial System | READY | - |
 | SPEC-020 | Tower Placement Preview + Turret Rotation | READY | - |
 | SPEC-021 | Advanced VFX (Trails, Animations, Environment) | READY | - |
