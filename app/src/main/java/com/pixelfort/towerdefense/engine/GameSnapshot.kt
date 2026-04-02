@@ -7,6 +7,7 @@ import com.pixelfort.towerdefense.engine.model.PlayerState
 import com.pixelfort.towerdefense.engine.model.Projectile
 import com.pixelfort.towerdefense.engine.model.Tower
 
+import com.pixelfort.towerdefense.engine.model.ActiveCombo
 import com.pixelfort.towerdefense.engine.model.DifficultyMode
 import com.pixelfort.towerdefense.engine.model.EnemyType
 
@@ -33,5 +34,7 @@ data class GameSnapshot(
     /** Whether this is an endless mode game */
     val isEndless: Boolean = false,
     /** Total kills in this run (used for endless high score) */
-    val totalKills: Int = 0
+    val totalKills: Int = 0,
+    /** SPEC-028: Currently active tower combos */
+    val activeCombos: List<ActiveCombo> = emptyList()
 )

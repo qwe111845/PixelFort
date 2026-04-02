@@ -51,9 +51,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.pixelfort.towerdefense.core.util.SpriteAssetLoader
 import com.pixelfort.towerdefense.engine.GameState
 import com.pixelfort.towerdefense.engine.level.Levels
+import com.pixelfort.towerdefense.engine.model.ActiveCombo
 import com.pixelfort.towerdefense.engine.model.MetaBonus
 import com.pixelfort.towerdefense.engine.model.Tower
 import com.pixelfort.towerdefense.engine.model.TowerType
+import com.pixelfort.towerdefense.engine.system.ComboSystem
 import com.pixelfort.towerdefense.core.datastore.GameplaySettingsData
 import com.pixelfort.towerdefense.feature.game.tutorial.TutorialOverlay
 import com.pixelfort.towerdefense.feature.game.viewmodel.GameUiState
@@ -311,6 +313,7 @@ fun GameScreen(
                 snapshot.towers.find { it.id == id }
             }
             if (selectedTower != null) {
+                val towerCombos = ComboSystem.combosForTower(selectedTower.id, snapshot.activeCombos)
                 Box(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
@@ -319,6 +322,7 @@ fun GameScreen(
                     TowerInfoPopup(
                         tower = selectedTower,
                         canAffordUpgrade = snapshot.playerState.canAfford(selectedTower.upgradeCost),
+                        activeCombos = towerCombos,
                         onUpgrade = viewModel::upgradeTower,
                         onSell = viewModel::sellTower,
                         onDismiss = { viewModel.selectTowerType(null) }
@@ -580,6 +584,7 @@ private fun GameEndOverlay(
 private fun TowerInfoPopup(
     tower: Tower,
     canAffordUpgrade: Boolean,
+    activeCombos: List<ActiveCombo> = emptyList(),
     onUpgrade: () -> Unit,
     onSell: () -> Unit,
     onDismiss: () -> Unit,
@@ -623,6 +628,28 @@ private fun TowerInfoPopup(
             Text("⚔ ${tower.stats.damage}", color = Color(0xFFEF5350), fontSize = 12.sp)
             Text("🎯 ${"%.1f".format(tower.stats.range)}", color = Color(0xFF42A5F5), fontSize = 12.sp)
             Text("⚡ ${tower.stats.fireRateMs}ms", color = Color(0xFFFFEE58), fontSize = 12.sp)
+        }
+        // SPEC-028: Show active combo names
+        if (activeCombos.isNotEmpty()) {
+            Spacer(Modifier.height(6.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = activeCombos.joinToString(" | ") { it.comboType.nameZh },
+                    color = Color(0xFFFFD740),
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Medium
+                )
+            }
+            for (combo in activeCombos) {
+                Text(
+                    text = combo.comboType.descZh,
+                    color = Color(0xFF90CAF9),
+                    fontSize = 10.sp
+                )
+            }
         }
         Spacer(Modifier.height(12.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {

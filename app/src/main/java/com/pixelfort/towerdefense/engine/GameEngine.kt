@@ -15,6 +15,8 @@ import com.pixelfort.towerdefense.engine.model.Projectile
 import com.pixelfort.towerdefense.engine.model.Tower
 import com.pixelfort.towerdefense.engine.model.TowerEffect
 import com.pixelfort.towerdefense.engine.model.TowerType
+import com.pixelfort.towerdefense.engine.model.ActiveCombo
+import com.pixelfort.towerdefense.engine.system.ComboSystem
 import com.pixelfort.towerdefense.engine.system.EnemyDeathSystem
 import com.pixelfort.towerdefense.engine.system.EnemyMovementSystem
 import com.pixelfort.towerdefense.engine.system.EndReachSystem
@@ -59,6 +61,7 @@ class GameEngine(
     private var rpEarned     = 0
     private var speedMultiplier = 1f
     private var totalKills   = 0
+    private var activeCombos = listOf<ActiveCombo>()
 
     fun update(deltaMs: Long) {
         if (state != GameState.Playing) return
@@ -95,7 +98,7 @@ class GameEngine(
         towers = targetResult.updatedTowers.toMutableList()
         projectiles.addAll(targetResult.projectiles)
 
-        val projResult = projectileSystem.update(projectiles, enemies, scaledDelta, statusSystem)
+        val projResult = projectileSystem.update(projectiles, enemies, scaledDelta, statusSystem, activeCombos, towers)
         projectiles = (projResult.remainingProjectiles + projResult.newChainProjectiles).toMutableList()
         enemies = projResult.damagedEnemies.toMutableList()
 
@@ -146,6 +149,7 @@ class GameEngine(
                 towers.add(tower)
                 playerState = playerState.spendGold(action.towerType.baseCost)
                 eventBus.emit(GameEvent.TowerPlaced(tower.id, tower.type, tower.gridRow, tower.gridCol))
+                recalculateCombos()
             }
             is GameAction.UpgradeTower -> {
                 val idx = towers.indexOfFirst { it.id == action.towerId }
@@ -153,12 +157,14 @@ class GameEngine(
                 playerState = playerState.spendGold(t.upgradeCost)
                 towers[idx] = t.copy(level = t.level + 1)
                 eventBus.emit(GameEvent.TowerUpgraded(t.id, t.level + 1, t.gridRow, t.gridCol))
+                recalculateCombos()
             }
             is GameAction.SellTower -> {
                 val t = towers.first { it.id == action.towerId }
                 towers.remove(t)
                 playerState = playerState.earnGold(t.sellValue)
                 eventBus.emit(GameEvent.TowerSold(t.id, t.sellValue))
+                recalculateCombos()
             }
             is GameAction.StartWave -> {
                 val maxWaves = if (isEndless) Int.MAX_VALUE else level.waves.size
@@ -197,8 +203,12 @@ class GameEngine(
         wavePreview     = buildWavePreview(),
         difficulty      = difficulty,
         isEndless       = isEndless,
-        totalKills      = totalKills
+        totalKills      = totalKills,
+        activeCombos    = activeCombos
     )
+
+    /** Expose active combos for the ProjectileSystem to apply damage bonuses. */
+    fun getActiveCombos(): List<ActiveCombo> = activeCombos
 
     private fun buildWavePreview(): List<Pair<EnemyType, Int>> {
         val waveIdx = playerState.currentWave
@@ -208,6 +218,10 @@ class GameEngine(
         }
         if (waveIdx >= level.waves.size) return emptyList()
         return level.waves[waveIdx].groups.map { it.enemyType to it.count }
+    }
+
+    private fun recalculateCombos() {
+        activeCombos = ComboSystem.detectCombos(towers)
     }
 
     private fun checkWinLoseConditions() {
