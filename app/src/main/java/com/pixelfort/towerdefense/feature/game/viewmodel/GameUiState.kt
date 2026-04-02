@@ -10,6 +10,7 @@ import com.pixelfort.towerdefense.feature.game.vfx.FlashEffect
 import com.pixelfort.towerdefense.feature.game.vfx.FloatingText
 import com.pixelfort.towerdefense.feature.game.vfx.Particle
 import com.pixelfort.towerdefense.feature.game.vfx.ScreenShake
+import com.pixelfort.towerdefense.feature.game.vfx.SellEffect
 import com.pixelfort.towerdefense.feature.game.vfx.TrailSystem
 
 sealed interface GameUiState {
@@ -31,6 +32,8 @@ sealed interface GameUiState {
         val tutorialState: TutorialState = TutorialState(isActive = false, isCompleted = true),
         val trailSystem: TrailSystem? = null,
         val ambientParticles: List<AmbientParticle> = emptyList(),
-        val deathFlashes: List<DeathFlash> = emptyList()
+        val deathFlashes: List<DeathFlash> = emptyList(),
+        val sellEffects: List<SellEffect> = emptyList(),
+        val sellConfirmTowerId: Int? = null
     ) : GameUiState
 }

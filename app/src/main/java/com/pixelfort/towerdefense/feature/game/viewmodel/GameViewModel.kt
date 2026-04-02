@@ -22,6 +22,7 @@ import com.pixelfort.towerdefense.feature.game.vfx.FlashEffect
 import com.pixelfort.towerdefense.feature.game.vfx.FloatingTextSystem
 import com.pixelfort.towerdefense.feature.game.vfx.ParticleSystem
 import com.pixelfort.towerdefense.feature.game.vfx.ScreenShake
+import com.pixelfort.towerdefense.feature.game.vfx.SellEffect
 import com.pixelfort.towerdefense.feature.game.vfx.TrailSystem
 import com.pixelfort.towerdefense.core.util.SpriteAssetLoader
 import com.pixelfort.towerdefense.core.database.dao.EndlessHighScoreDao
@@ -76,6 +77,11 @@ class GameViewModel @Inject constructor(
     private var isMeteorTargeting = false
     private var gameEndHandled = false
     private var gameElapsedMs: Long = 0L
+
+    // SPEC-030: Sell confirmation and VFX state
+    private var sellConfirmTowerId: Int? = null
+    private var sellConfirmTimestampMs: Long = 0L
+    private val sellEffects = mutableListOf<SellEffect>()
 
     val gameplaySettingsFlow = settingsDataStore.settingsFlow
     private var _currentGameplaySettings = GameplaySettingsData()
@@ -174,11 +180,55 @@ class GameViewModel @Inject constructor(
         emitState()
     }
 
-    fun sellTower() {
+    /** SPEC-030: Two-tap sell confirmation. First tap shows "Confirm?", second tap sells. */
+    fun onSellTapped() {
         val towerId = selectedTowerId ?: return
-        engine?.processAction(GameAction.SellTower(towerId))
-        selectedTowerId = null
+        val eng = engine ?: return
+        val now = System.currentTimeMillis()
+
+        if (sellConfirmTowerId == towerId && (now - sellConfirmTimestampMs) <= SELL_CONFIRM_TIMEOUT_MS) {
+            // Second tap within 2s: execute sell
+            val snapshot = eng.snapshot()
+            val tower = snapshot.towers.find { it.id == towerId }
+            if (tower != null) {
+                val refundAmount = tower.sellValue
+                val pixelX = tower.gridCol * currentCellSize + currentCellSize / 2f
+                val pixelY = tower.gridRow * currentCellSize + currentCellSize / 2f
+
+                eng.processAction(GameAction.SellTower(towerId))
+
+                // Add dissolve sell effect at tower position
+                sellEffects.add(SellEffect(x = pixelX, y = pixelY))
+
+                // Add floating refund text via FloatingTextSystem
+                floatingTextSystem.emitSellText(pixelX, pixelY, refundAmount)
+
+                // Gold flash on HUD
+                flashEffect = flashEffect.trigger(
+                    androidx.compose.ui.graphics.Color(0xFFFFD700), 120L
+                )
+
+                // Spawn gold sparkle particles
+                particleSystem.emitSellBurst(pixelX, pixelY)
+            }
+            selectedTowerId = null
+            sellConfirmTowerId = null
+        } else {
+            // First tap: enter confirmation mode
+            sellConfirmTowerId = towerId
+            sellConfirmTimestampMs = now
+        }
         emitState()
+    }
+
+    /** Reset sell confirmation if tower selection changes or timeout expires. */
+    private fun resetSellConfirmIfNeeded() {
+        if (sellConfirmTowerId != null) {
+            val elapsed = System.currentTimeMillis() - sellConfirmTimestampMs
+            if (elapsed > SELL_CONFIRM_TIMEOUT_MS || sellConfirmTowerId != selectedTowerId) {
+                sellConfirmTowerId = null
+            }
+        }
     }
 
     /** SPEC-029: Handle skill button tap */
@@ -276,6 +326,14 @@ class GameViewModel @Inject constructor(
                 val updatedFlashes = deathFlashes.map { it.update(deltaMs) }.filter { !it.isDead }
                 deathFlashes.clear()
                 deathFlashes.addAll(updatedFlashes)
+
+                // SPEC-030: Update and prune sell effects
+                val updatedSellEffects = sellEffects.map { it.update(deltaMs) }.filter { !it.isDead }
+                sellEffects.clear()
+                sellEffects.addAll(updatedSellEffects)
+
+                // SPEC-030: Reset sell confirmation after timeout
+                resetSellConfirmIfNeeded()
 
                 // Only process floating texts (damage numbers) if enabled
                 if (_currentGameplaySettings.damageNumbersEnabled) {
@@ -397,12 +455,19 @@ class GameViewModel @Inject constructor(
             tutorialState = tutorialState,
             trailSystem = trailSystem,
             ambientParticles = ambientSystem?.activeParticles ?: emptyList(),
-            deathFlashes = deathFlashes.toList()
+            deathFlashes = deathFlashes.toList(),
+            sellEffects = sellEffects.toList(),
+            sellConfirmTowerId = sellConfirmTowerId
         )
     }
 
     override fun onCleared() {
         super.onCleared()
         gameLoopJob?.cancel()
+    }
+
+    companion object {
+        /** SPEC-030: Sell confirmation resets after 2 seconds. */
+        const val SELL_CONFIRM_TIMEOUT_MS = 2000L
     }
 }
