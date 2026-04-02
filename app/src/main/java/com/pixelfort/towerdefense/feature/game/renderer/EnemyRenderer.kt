@@ -24,14 +24,8 @@ object EnemyRenderer {
             val cx = enemy.pixelX
             val cy = enemy.pixelY
 
-            // Try PNG sprite first
-            val frame = if ((elapsedMs / 300L) % 2 == 0L) 1 else 2
-            val sprite = if (enemy.isPoisoned || enemy.isSlowed) {
-                // Check for boss enrage sprite (future: when StatusEffect.Enraged exists)
-                spriteLoader?.getEnemySprite(enemy.type, frame)
-            } else {
-                spriteLoader?.getEnemySprite(enemy.type, frame)
-            }
+            // Use consistent single frame per enemy (frame 1)
+            val sprite = spriteLoader?.getEnemySprite(enemy.type, 1)
 
             if (sprite != null) {
                 val spriteSize = (cellSize * enemy.type.size * 0.85f).toInt()
