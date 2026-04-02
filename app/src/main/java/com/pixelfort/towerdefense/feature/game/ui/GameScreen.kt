@@ -55,6 +55,7 @@ import com.pixelfort.towerdefense.engine.model.MetaBonus
 import com.pixelfort.towerdefense.engine.model.Tower
 import com.pixelfort.towerdefense.engine.model.TowerType
 import com.pixelfort.towerdefense.core.datastore.GameplaySettingsData
+import com.pixelfort.towerdefense.feature.game.tutorial.TutorialOverlay
 import com.pixelfort.towerdefense.feature.game.viewmodel.GameUiState
 import com.pixelfort.towerdefense.feature.game.viewmodel.GameViewModel
 import kotlinx.coroutines.delay
@@ -329,6 +330,18 @@ fun GameScreen(
                     .align(Alignment.BottomCenter)
                     .padding(bottom = hudHeightDp + 4.dp)
             )
+        }
+
+        // ── Tutorial overlay (topmost layer, pauses game) ──
+        if (uiState is GameUiState.Playing) {
+            val playingState = uiState as GameUiState.Playing
+            if (playingState.tutorialState.isActive) {
+                TutorialOverlay(
+                    tutorialState = playingState.tutorialState,
+                    onNext = viewModel::advanceTutorial,
+                    onSkip = viewModel::skipTutorial
+                )
+            }
         }
     }
 }

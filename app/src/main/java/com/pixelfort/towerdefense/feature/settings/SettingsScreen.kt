@@ -131,6 +131,19 @@ fun SettingsScreen(
                 checked = gameplayState.showFpsCounter,
                 onCheckedChange = { scope.launch { viewModel.setShowFpsCounter(it) } }
             )
+            Spacer(Modifier.height(16.dp))
+
+            Button(
+                onClick = { scope.launch { viewModel.resetTutorial() } },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1A3050)),
+                shape = RoundedCornerShape(10.dp)
+            ) {
+                Text(
+                    text = if (gameplayState.tutorialCompleted) "Replay Tutorial" else "Tutorial will show on Level 1",
+                    fontSize = 14.sp
+                )
+            }
 
             SectionDivider()
 

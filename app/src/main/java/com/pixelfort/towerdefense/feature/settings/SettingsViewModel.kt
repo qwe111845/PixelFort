@@ -26,4 +26,6 @@ class SettingsViewModel @Inject constructor(
     suspend fun setScreenShakeEnabled(enabled: Boolean) = settingsDataStore.setScreenShakeEnabled(enabled)
     suspend fun setDamageNumbersEnabled(enabled: Boolean) = settingsDataStore.setDamageNumbersEnabled(enabled)
     suspend fun setShowFpsCounter(enabled: Boolean) = settingsDataStore.setShowFpsCounter(enabled)
+
+    suspend fun resetTutorial() = settingsDataStore.setTutorialCompleted(false)
 }
