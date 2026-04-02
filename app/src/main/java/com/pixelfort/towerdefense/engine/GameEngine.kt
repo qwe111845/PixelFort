@@ -16,8 +16,10 @@ import com.pixelfort.towerdefense.engine.model.Tower
 import com.pixelfort.towerdefense.engine.model.TowerEffect
 import com.pixelfort.towerdefense.engine.model.TowerType
 import com.pixelfort.towerdefense.engine.model.ActiveCombo
+import com.pixelfort.towerdefense.engine.model.ActiveWaveEvent
 import com.pixelfort.towerdefense.engine.model.SkillType
 import com.pixelfort.towerdefense.engine.system.ComboSystem
+import com.pixelfort.towerdefense.engine.system.WaveEventSystem
 import com.pixelfort.towerdefense.engine.system.EnemyDeathSystem
 import com.pixelfort.towerdefense.engine.system.EnemyMovementSystem
 import com.pixelfort.towerdefense.engine.system.EndReachSystem
@@ -32,7 +34,9 @@ class GameEngine(
     private val cellSize: Float,
     private val metaBonus: MetaBonus = MetaBonus(),
     private val difficulty: DifficultyMode = DifficultyMode.NORMAL,
-    private val isEndless: Boolean = false
+    private val isEndless: Boolean = false,
+    /** SPEC-032: whether random wave events are enabled (from Settings) */
+    private val randomEventsEnabled: Boolean = true
 ) {
     private val eventBus        = GameEventBus()
     private val actionProcessor = ActionProcessor(level.map)
@@ -65,6 +69,8 @@ class GameEngine(
     private var speedMultiplier = 1f
     private var totalKills   = 0
     private var activeCombos = listOf<ActiveCombo>()
+    /** SPEC-032 */
+    private var activeWaveEvents = listOf<ActiveWaveEvent>()
 
     fun update(deltaMs: Long) {
         if (state != GameState.Playing) return
@@ -80,12 +86,17 @@ class GameEngine(
             eventBus.emit(GameEvent.BossEnraged(id))
         }
 
+        // SPEC-032: aggregate event modifiers once per frame
+        val eventMods = WaveEventSystem.getModifiers(activeWaveEvents)
+
         val spawnResult = waveSpawner.update(scaledDelta, nextEnemyId)
         spawnResult.spawnedEnemies.forEach { e ->
-            val hpMul = difficulty.hpMultiplier * (if (isEndless) EndlessWaveGenerator.hpMultiplier(playerState.currentWave) else 1f)
+            val hpMul = difficulty.hpMultiplier *
+                (if (isEndless) EndlessWaveGenerator.hpMultiplier(playerState.currentWave) else 1f) *
+                eventMods.enemyHpMult
             val scaledHp = maxOf(1, (e.maxHp * hpMul).toInt())
-            val scaledSpeed = e.speed * difficulty.speedMultiplier
-            val scaledReward = (e.reward * metaBonus.goldRewardMultiplier * difficulty.goldRewardMultiplier).toInt()
+            val scaledSpeed = e.speed * difficulty.speedMultiplier * eventMods.enemySpeedMult
+            val scaledReward = (e.reward * metaBonus.goldRewardMultiplier * difficulty.goldRewardMultiplier * eventMods.goldMult).toInt()
             enemies.add(e.copy(hp = scaledHp, maxHp = scaledHp, speed = scaledSpeed, reward = scaledReward))
             nextEnemyId = e.id + 1
         }
@@ -100,11 +111,18 @@ class GameEngine(
             eventBus.emit(GameEvent.ProjectileHit(evt.pixelX, evt.pixelY, TowerEffect.None, evt.damage))
         }
 
-        val targetResult = targetingSystem.update(towers, enemies, scaledDelta)
+        val targetResult = targetingSystem.update(
+            towers, enemies, scaledDelta,
+            rangeMult = eventMods.rangeMult,
+            fireRateMult = eventMods.fireRateMult
+        )
         towers = targetResult.updatedTowers.toMutableList()
         projectiles.addAll(targetResult.projectiles)
 
-        val projResult = projectileSystem.update(projectiles, enemies, scaledDelta, statusSystem, activeCombos, towers)
+        val projResult = projectileSystem.update(
+            projectiles, enemies, scaledDelta, statusSystem, activeCombos, towers,
+            projectileSpeedMult = eventMods.projectileSpeedMult
+        )
         projectiles = (projResult.remainingProjectiles + projResult.newChainProjectiles).toMutableList()
         enemies = projResult.damagedEnemies.toMutableList()
 
@@ -190,6 +208,18 @@ class GameEngine(
             is GameAction.StartWave -> {
                 val maxWaves = if (isEndless) Int.MAX_VALUE else level.waves.size
                 if (state == GameState.WaitingForWave && playerState.currentWave < maxWaves) {
+                    // SPEC-032: Roll random wave event before wave starts
+                    val rolledType = WaveEventSystem.rollEvent(
+                        playerState.currentWave, isEndless, randomEventsEnabled
+                    )
+                    activeWaveEvents = if (rolledType != null) {
+                        val event = ActiveWaveEvent(rolledType)
+                        eventBus.emit(GameEvent.WaveEventTriggered(event))
+                        listOf(event)
+                    } else {
+                        emptyList()
+                    }
+
                     waveSpawner.startWave(playerState.currentWave)
                     waveSpawningComplete = false
                     state = GameState.Playing
@@ -228,7 +258,8 @@ class GameEngine(
         totalKills      = totalKills,
         activeCombos    = activeCombos,
         skills          = skillSystem.getSkills(),
-        goldMultiplier  = skillSystem.getGoldMultiplier()
+        goldMultiplier  = skillSystem.getGoldMultiplier(),
+        activeWaveEvents = activeWaveEvents
     )
 
     /** Expose active combos for the ProjectileSystem to apply damage bonuses. */
@@ -255,6 +286,8 @@ class GameEngine(
             return
         }
         if (waveSpawningComplete && enemies.isEmpty() && projectiles.isEmpty()) {
+            // SPEC-032: Clear wave events when wave ends
+            activeWaveEvents = emptyList()
             val nextWave = playerState.currentWave + 1
             val maxLives = maxOf(1, level.startingLives + metaBonus.startingLivesBonus + difficulty.startingLivesBonus)
             if (metaBonus.livesPerWaveBonus > 0) {

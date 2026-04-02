@@ -14,6 +14,7 @@ import com.pixelfort.towerdefense.engine.model.MetaBonus
 import com.pixelfort.towerdefense.engine.model.SkillType
 import com.pixelfort.towerdefense.engine.model.TowerType
 import com.pixelfort.towerdefense.engine.event.GameEvent
+import com.pixelfort.towerdefense.engine.model.ActiveWaveEvent
 import com.pixelfort.towerdefense.engine.model.TowerEffect
 import com.pixelfort.towerdefense.feature.game.tutorial.TutorialState
 import com.pixelfort.towerdefense.feature.game.vfx.AmbientSystem
@@ -89,6 +90,10 @@ class GameViewModel @Inject constructor(
 
     fun clearBestiaryToast() { _bestiaryToast.value = null }
 
+    // SPEC-032: Wave event banner state
+    private var waveEventBanner: ActiveWaveEvent? = null
+    private var waveEventBannerRemainingMs: Long = 0L
+
     // SPEC-030: Sell confirmation and VFX state
     private var sellConfirmTowerId: Int? = null
     private var sellConfirmTimestampMs: Long = 0L
@@ -119,7 +124,10 @@ class GameViewModel @Inject constructor(
             spriteLoader.loadAll()
             metaBonus = MetaBonus.from(metaUpgradeRepository.getState())
             val level = Levels.getById(levelId)
-            engine = GameEngine(level, cellSize, metaBonus, difficulty, isEndless)
+            engine = GameEngine(
+                level, cellSize, metaBonus, difficulty, isEndless,
+                randomEventsEnabled = _currentGameplaySettings.randomEventsEnabled
+            )
             // Initialize ambient particle system sized to the game map
             ambientSystem = AmbientSystem(
                 canvasWidth = level.map.cols * cellSize,
@@ -354,6 +362,20 @@ class GameViewModel @Inject constructor(
                 }
                 floatingTextSystem.update(deltaMs)
 
+                // SPEC-032: Process wave event banner
+                for (event in snapshot.events) {
+                    if (event is GameEvent.WaveEventTriggered) {
+                        waveEventBanner = event.event
+                        waveEventBannerRemainingMs = WAVE_EVENT_BANNER_DURATION_MS
+                    }
+                }
+                if (waveEventBannerRemainingMs > 0) {
+                    waveEventBannerRemainingMs = (waveEventBannerRemainingMs - deltaMs).coerceAtLeast(0L)
+                    if (waveEventBannerRemainingMs <= 0L) {
+                        waveEventBanner = null
+                    }
+                }
+
                 processShakeAndFlash(snapshot.events, deltaMs)
 
                 emitState()
@@ -501,7 +523,9 @@ class GameViewModel @Inject constructor(
             ambientParticles = ambientSystem?.activeParticles ?: emptyList(),
             deathFlashes = deathFlashes.toList(),
             sellEffects = sellEffects.toList(),
-            sellConfirmTowerId = sellConfirmTowerId
+            sellConfirmTowerId = sellConfirmTowerId,
+            waveEventBanner = waveEventBanner,
+            waveEventBannerRemainingMs = waveEventBannerRemainingMs
         )
     }
 
@@ -513,5 +537,7 @@ class GameViewModel @Inject constructor(
     companion object {
         /** SPEC-030: Sell confirmation resets after 2 seconds. */
         const val SELL_CONFIRM_TIMEOUT_MS = 2000L
+        /** SPEC-032: Wave event banner display duration. */
+        const val WAVE_EVENT_BANNER_DURATION_MS = 3000L
     }
 }

@@ -10,6 +10,7 @@ import com.pixelfort.towerdefense.engine.model.Tower
 import com.pixelfort.towerdefense.engine.model.ActiveCombo
 import com.pixelfort.towerdefense.engine.model.DifficultyMode
 import com.pixelfort.towerdefense.engine.model.EnemyType
+import com.pixelfort.towerdefense.engine.model.ActiveWaveEvent
 import com.pixelfort.towerdefense.engine.model.SkillState
 
 data class GameSnapshot(
@@ -41,5 +42,7 @@ data class GameSnapshot(
     /** SPEC-029: Active skill states */
     val skills: List<SkillState> = emptyList(),
     /** SPEC-029: Current gold multiplier from Gold Rush */
-    val goldMultiplier: Float = 1.0f
+    val goldMultiplier: Float = 1.0f,
+    /** SPEC-032: Currently active wave events */
+    val activeWaveEvents: List<ActiveWaveEvent> = emptyList()
 )

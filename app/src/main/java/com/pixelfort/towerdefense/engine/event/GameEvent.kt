@@ -1,6 +1,7 @@
 package com.pixelfort.towerdefense.engine.event
 
 import com.pixelfort.towerdefense.engine.model.EnemyType
+import com.pixelfort.towerdefense.engine.model.ActiveWaveEvent
 import com.pixelfort.towerdefense.engine.model.SkillType
 import com.pixelfort.towerdefense.engine.model.TowerEffect
 import com.pixelfort.towerdefense.engine.model.TowerType
@@ -52,4 +53,7 @@ sealed interface GameEvent {
         val targetPixelX: Float? = null,
         val targetPixelY: Float? = null
     ) : GameEvent
+
+    /** SPEC-032: Fired when a random wave event is triggered */
+    data class WaveEventTriggered(val event: ActiveWaveEvent) : GameEvent
 }

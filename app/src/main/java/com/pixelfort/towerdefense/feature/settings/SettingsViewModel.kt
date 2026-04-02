@@ -27,5 +27,7 @@ class SettingsViewModel @Inject constructor(
     suspend fun setDamageNumbersEnabled(enabled: Boolean) = settingsDataStore.setDamageNumbersEnabled(enabled)
     suspend fun setShowFpsCounter(enabled: Boolean) = settingsDataStore.setShowFpsCounter(enabled)
 
+    suspend fun setRandomEventsEnabled(enabled: Boolean) = settingsDataStore.setRandomEventsEnabled(enabled)
+
     suspend fun resetTutorial() = settingsDataStore.setTutorialCompleted(false)
 }
