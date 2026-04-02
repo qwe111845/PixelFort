@@ -19,6 +19,7 @@ import com.pixelfort.towerdefense.engine.model.CellEffect
 import com.pixelfort.towerdefense.engine.model.GameMap
 import com.pixelfort.towerdefense.engine.model.GridPoint
 import com.pixelfort.towerdefense.engine.model.TowerType
+import com.pixelfort.towerdefense.feature.game.renderer.ComboRenderer.drawCombos
 import com.pixelfort.towerdefense.feature.game.renderer.EnemyRenderer.drawEnemies
 import com.pixelfort.towerdefense.feature.game.renderer.FloatingTextRenderer.drawFloatingTexts
 import com.pixelfort.towerdefense.feature.game.renderer.MapRenderer.drawMap
@@ -90,6 +91,7 @@ fun GameCanvas(
             drawMap(map, cellSize, cellEffects)
             drawAmbientParticles(ambientParticles)
             drawTowers(snapshot.towers, cellSize, selectedTowerId, spriteLoader, elapsedMs)
+            drawCombos(snapshot.activeCombos, snapshot.towers, cellSize, elapsedMs)
             drawEnemies(snapshot.enemies, cellSize, spriteLoader, elapsedMs, deathFlashes)
             drawProjectiles(snapshot.projectiles, trailSystem)
             drawParticles(particles)
