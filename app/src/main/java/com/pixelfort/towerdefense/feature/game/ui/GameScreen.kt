@@ -791,6 +791,36 @@ private fun FloatingTowerTooltip(
                 Text("💰 ${towerType.baseCost}g", color = Color(0xFFFFD700), fontSize = 12.sp, fontWeight = FontWeight.Medium)
             }
 
+            // Range comparison bar (R5)
+            Spacer(Modifier.height(6.dp))
+            val maxRange = TowerType.SNIPER.statsForLevel(1, metaBonus).range
+            val rangeFraction = (stats.range / maxRange).coerceIn(0f, 1f)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = "Range: ${"%.1f".format(stats.range)}",
+                    color = Color(0xFF42A5F5),
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.width(72.dp)
+                )
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(6.dp)
+                        .background(Color(0xFF222244), RoundedCornerShape(3.dp))
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(rangeFraction)
+                            .height(6.dp)
+                            .background(Color(0xFF42A5F5), RoundedCornerShape(3.dp))
+                    )
+                }
+            }
+
             // Level preview: show Lv1 → Lv2 → Lv3 sprites
             if (spriteLoader != null) {
                 Spacer(Modifier.height(10.dp))
