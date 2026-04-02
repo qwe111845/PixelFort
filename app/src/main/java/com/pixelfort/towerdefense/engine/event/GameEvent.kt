@@ -1,6 +1,7 @@
 package com.pixelfort.towerdefense.engine.event
 
 import com.pixelfort.towerdefense.engine.model.EnemyType
+import com.pixelfort.towerdefense.engine.model.SkillType
 import com.pixelfort.towerdefense.engine.model.TowerEffect
 import com.pixelfort.towerdefense.engine.model.TowerType
 
@@ -44,4 +45,11 @@ sealed interface GameEvent {
 
     data object GameWon : GameEvent
     data object GameLost : GameEvent
+
+    /** SPEC-029: Fired when a skill is used */
+    data class SkillUsed(
+        val type: SkillType,
+        val targetPixelX: Float? = null,
+        val targetPixelY: Float? = null
+    ) : GameEvent
 }

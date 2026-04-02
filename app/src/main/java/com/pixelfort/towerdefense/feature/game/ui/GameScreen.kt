@@ -167,24 +167,36 @@ fun GameScreen(
                         )
                     }
                     is GameUiState.Playing -> {
-                        GameCanvas(
-                            snapshot = state.snapshot,
-                            map = map,
-                            cellSize = state.cellSize,
-                            cellEffects = cellEffects,
-                            particles = state.particles,
-                            floatingTexts = state.floatingTexts,
-                            screenShake = state.screenShake,
-                            trailSystem = state.trailSystem,
-                            ambientParticles = state.ambientParticles,
-                            deathFlashes = state.deathFlashes,
-                            selectedTowerId = state.selectedTowerId,
-                            selectedTowerType = state.selectedTowerType,
-                            spriteLoader = viewModel.spriteLoader,
-                            elapsedMs = state.elapsedMs,
-                            onCellTapped = viewModel::onCellTapped,
-                            modifier = Modifier.size(gameWidthDp, gameHeightDp)
-                        )
+                        Box {
+                            GameCanvas(
+                                snapshot = state.snapshot,
+                                map = map,
+                                cellSize = state.cellSize,
+                                cellEffects = cellEffects,
+                                particles = state.particles,
+                                floatingTexts = state.floatingTexts,
+                                screenShake = state.screenShake,
+                                trailSystem = state.trailSystem,
+                                ambientParticles = state.ambientParticles,
+                                deathFlashes = state.deathFlashes,
+                                selectedTowerId = state.selectedTowerId,
+                                selectedTowerType = state.selectedTowerType,
+                                spriteLoader = viewModel.spriteLoader,
+                                elapsedMs = state.elapsedMs,
+                                onCellTapped = viewModel::onCellTapped,
+                                modifier = Modifier.size(gameWidthDp, gameHeightDp)
+                            )
+
+                            // SPEC-029: Skill bar at top-right of game area
+                            if (state.snapshot.skills.isNotEmpty()) {
+                                SkillBar(
+                                    skills = state.snapshot.skills,
+                                    isMeteorTargeting = state.isMeteorTargeting,
+                                    onSkillTapped = viewModel::onSkillTapped,
+                                    modifier = Modifier.align(Alignment.TopEnd)
+                                )
+                            }
+                        }
                     }
                 }
             }
