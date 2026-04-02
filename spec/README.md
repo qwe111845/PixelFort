@@ -55,7 +55,7 @@
 | SPEC-013 | Floating Text + Damage Numbers | READY | - |
 | SPEC-014 | Screen Shake + Impact Juice | COMPLETED | feature/014-screen-shake |
 | SPEC-015 | Boss Mechanics | READY | - |
-| SPEC-016 | Difficulty Modes + Endless Mode | READY | - |
+| SPEC-016 | Difficulty Modes + Endless Mode | COMPLETED | feature/016-difficulty-endless |
 | SPEC-017 | Audio System | COMPLETED | feature/017-audio-system |
 | SPEC-018 | Settings Screen | COMPLETED | feature/018-settings-screen |
 | SPEC-019 | Tutorial System | READY | - |
