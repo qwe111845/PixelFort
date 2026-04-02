@@ -65,6 +65,7 @@ fun HudOverlay(
     selectedTowerType: TowerType?,
     metaBonus: MetaBonus,
     wavePreview: List<Pair<EnemyType, Int>> = emptyList(),
+    placedTowers: List<Tower> = emptyList(),
     onSelectTower: (TowerType?) -> Unit,
     onStartWave: () -> Unit,
     onPause: () -> Unit,
@@ -127,6 +128,9 @@ fun HudOverlay(
             }
         }
 
+        // Precompute tower counts by type
+        val towerCounts = placedTowers.groupingBy { it.type }.eachCount()
+
         // Tower selection scroll bar
         LazyRow(
             modifier = Modifier.fillMaxWidth(),
@@ -138,12 +142,14 @@ fun HudOverlay(
                         towerType in metaBonus.unlockedTowers
                 val isSelected = selectedTowerType == towerType
                 val canAfford = isUnlocked && playerState.canAfford(towerType.baseCost)
+                val placedCount = towerCounts[towerType] ?: 0
 
                 TowerHudButton(
                     towerType = towerType,
                     isUnlocked = isUnlocked,
                     isSelected = isSelected,
                     canAfford = canAfford,
+                    placedCount = placedCount,
                     spriteLoader = spriteLoader,
                     onSelect = {
                         if (isUnlocked) {
@@ -165,6 +171,7 @@ private fun TowerHudButton(
     isUnlocked: Boolean,
     isSelected: Boolean,
     canAfford: Boolean,
+    placedCount: Int = 0,
     spriteLoader: SpriteAssetLoader? = null,
     onSelect: () -> Unit,
     onLongPress: () -> Unit,
@@ -226,6 +233,23 @@ private fun TowerHudButton(
                             .matchParentSize()
                             .background(Color.Black.copy(alpha = 0.5f))
                     )
+                }
+                // Tower count badge
+                if (placedCount > 0) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .size(16.dp)
+                            .background(Color(0xFFFF6D00), RoundedCornerShape(8.dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "$placedCount",
+                            color = Color.White,
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
             } else {
                 Box(

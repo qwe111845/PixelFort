@@ -92,7 +92,9 @@ data class Tower(
     val gridRow: Int,
     val gridCol: Int,
     val cooldownRemainingMs: Long = 0,
-    val metaBonus: MetaBonus = MetaBonus()
+    val metaBonus: MetaBonus = MetaBonus(),
+    /** Angle the turret is facing in radians (0 = right, PI/2 = down). */
+    val facingAngle: Float = 0f
 ) {
     val stats: TowerStats get() = type.statsForLevel(level, metaBonus)
 
