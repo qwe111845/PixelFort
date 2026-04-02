@@ -1,11 +1,6 @@
 package com.pixelfort.towerdefense.navigation
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -14,6 +9,7 @@ import com.pixelfort.towerdefense.feature.game.ui.GameScreen
 import com.pixelfort.towerdefense.feature.levelselect.LevelSelectScreen
 import com.pixelfort.towerdefense.feature.menu.ui.MainMenuScreen
 import com.pixelfort.towerdefense.feature.metaupgrade.MetaUpgradeScreen
+import com.pixelfort.towerdefense.feature.settings.SettingsScreen
 
 @Composable
 fun AppNavGraph() {
@@ -61,7 +57,6 @@ fun AppNavGraph() {
                     navController.popBackStack()
                 },
                 onGoToUpgrades = {
-                    // Pop to LevelSelect then navigate to MetaUpgrade
                     navController.popBackStack(Routes.LevelSelect, inclusive = false)
                     navController.navigate(Routes.MetaUpgrade)
                 }
@@ -77,12 +72,11 @@ fun AppNavGraph() {
         }
 
         composable<Routes.Settings> {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                Text("Settings - Coming Soon")
-            }
+            SettingsScreen(
+                onBack = {
+                    navController.popBackStack()
+                }
+            )
         }
     }
 }

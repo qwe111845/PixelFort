@@ -54,6 +54,7 @@ import com.pixelfort.towerdefense.engine.level.Levels
 import com.pixelfort.towerdefense.engine.model.MetaBonus
 import com.pixelfort.towerdefense.engine.model.Tower
 import com.pixelfort.towerdefense.engine.model.TowerType
+import com.pixelfort.towerdefense.core.datastore.GameplaySettingsData
 import com.pixelfort.towerdefense.feature.game.viewmodel.GameUiState
 import com.pixelfort.towerdefense.feature.game.viewmodel.GameViewModel
 import kotlinx.coroutines.delay
@@ -68,8 +69,26 @@ fun GameScreen(
     viewModel: GameViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val gameplaySettings by viewModel.gameplaySettingsFlow.collectAsStateWithLifecycle(initialValue = GameplaySettingsData())
     val map = Levels.getById(levelId).map
     val density = LocalDensity.current
+
+    // FPS counter state
+    var fpsText by remember { mutableStateOf("") }
+    var frameCount by remember { mutableStateOf(0) }
+    var lastFpsTime by remember { mutableStateOf(System.currentTimeMillis()) }
+
+    LaunchedEffect(uiState) {
+        if (gameplaySettings.showFpsCounter) {
+            frameCount++
+            val now = System.currentTimeMillis()
+            if (now - lastFpsTime >= 1000L) {
+                fpsText = "$frameCount FPS"
+                frameCount = 0
+                lastFpsTime = now
+            }
+        }
+    }
 
     // Floating tooltip state
     var tooltipTower by remember { mutableStateOf<TowerType?>(null) }
@@ -235,6 +254,21 @@ fun GameScreen(
                     modifier = Modifier
                         .fillMaxSize()
                         .background(state.flashEffect.color.copy(alpha = state.flashEffect.alpha))
+                )
+            }
+
+            // FPS counter overlay
+            if (gameplaySettings.showFpsCounter && fpsText.isNotEmpty()) {
+                Text(
+                    text = fpsText,
+                    color = Color(0xFF00FF00),
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(top = statusBarPadding + 4.dp, end = 8.dp)
+                        .background(Color.Black.copy(alpha = 0.5f), RoundedCornerShape(4.dp))
+                        .padding(horizontal = 6.dp, vertical = 2.dp)
                 )
             }
 
