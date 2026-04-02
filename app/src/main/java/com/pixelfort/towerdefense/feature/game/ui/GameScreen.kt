@@ -30,6 +30,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.shape.RoundedCornerShape as RCS
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
@@ -390,6 +397,15 @@ private fun GameEndOverlay(
     onBack: () -> Unit,
     onGoToUpgrades: () -> Unit
 ) {
+    val context = LocalContext.current
+    val illustration = remember(isVictory) {
+        val filename = if (isVictory) "sprites/extras/result_victory.png" else "sprites/extras/result_defeat.png"
+        try {
+            context.assets.open(filename).use { stream ->
+                android.graphics.BitmapFactory.decodeStream(stream)?.asImageBitmap()
+            }
+        } catch (_: Exception) { null }
+    }
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -403,6 +419,20 @@ private fun GameEndOverlay(
                 .background(Color(0xFF1A1A2E), RoundedCornerShape(20.dp))
                 .padding(32.dp)
         ) {
+            // Result illustration
+            illustration?.let { bmp ->
+                Image(
+                    bitmap = bmp,
+                    contentDescription = if (isVictory) "Victory" else "Defeat",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(16f / 9f)
+                        .clip(RoundedCornerShape(12.dp))
+                )
+                Spacer(Modifier.height(12.dp))
+            }
+
             Text(
                 text = if (isVictory) "🏆 勝利！" else "💀 失敗",
                 color = if (isVictory) Color(0xFFFFD700) else Color(0xFFEF5350),
