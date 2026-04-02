@@ -47,7 +47,9 @@ private data class LevelInfo(
 private val levels = listOf(
     LevelInfo(1, "翠綠草原", "初級難度 · 8x12 地圖", 5, Color(0xFF388E3C)),
     LevelInfo(2, "沙漠廢墟", "中級難度 · 9x14 地圖", 6, Color(0xFFE65100)),
-    LevelInfo(3, "冰雪要塞", "高級難度 · 10x16 地圖", 7, Color(0xFF0D47A1))
+    LevelInfo(3, "冰雪要塞", "高級難度 · 10x16 地圖", 7, Color(0xFF0D47A1)),
+    LevelInfo(4, "熔岩洞窟", "進階難度 · 10x14 地圖", 8, Color(0xFFBF360C)),
+    LevelInfo(5, "天空神殿", "最高難度 · 12x16 地圖", 10, Color(0xFF4A148C))
 )
 
 @Composable
