@@ -50,7 +50,8 @@ object Levels {
             )),
             Wave(5, listOf(
                 WaveGroup(EnemyType.ORC, 4, 1500L),
-                WaveGroup(EnemyType.DRAGON, 1, 5000L, 5000L)
+                WaveGroup(EnemyType.DRAGON, 1, 5000L, 5000L),
+                WaveGroup(EnemyType.BOSS_DRAGON, 1, 5000L, 5000L)
             ))
         ),
         startingGold = 200, startingLives = 20
@@ -106,7 +107,8 @@ object Levels {
             Wave(6, listOf(
                 WaveGroup(EnemyType.ORC, 5, 1200L),
                 WaveGroup(EnemyType.TROLL, 2, 3000L, 2000L),
-                WaveGroup(EnemyType.DRAGON, 1, 5000L, 5000L)
+                WaveGroup(EnemyType.DRAGON, 1, 5000L, 5000L),
+                WaveGroup(EnemyType.BOSS_DRAGON, 1, 5000L, 5000L)
             ))
         ),
         startingGold = 250, startingLives = 20
@@ -170,7 +172,8 @@ object Levels {
             Wave(7, listOf(
                 WaveGroup(EnemyType.SPECTER, 10, 700L),
                 WaveGroup(EnemyType.DRAGON, 3, 4000L, 4000L),
-                WaveGroup(EnemyType.TROLL, 3, 2500L, 6000L)
+                WaveGroup(EnemyType.TROLL, 3, 2500L, 6000L),
+                WaveGroup(EnemyType.BOSS_DRAGON, 1, 5000L, 5000L)
             ))
         ),
         startingGold = 300, startingLives = 25

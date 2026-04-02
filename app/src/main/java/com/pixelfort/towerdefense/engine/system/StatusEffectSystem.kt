@@ -7,11 +7,13 @@ class StatusEffectSystem {
 
     data class Result(
         val updatedEnemies: List<Enemy>,
-        val poisonDamageMap: Map<Int, Int>   // enemyId -> total poison damage this tick
+        val poisonDamageMap: Map<Int, Int>,   // enemyId -> total poison damage this tick
+        val newlyEnragedIds: List<Int> = emptyList()  // enemy IDs that just enraged
     )
 
     fun update(enemies: List<Enemy>, deltaMs: Long): Result {
         val poisonDamage = mutableMapOf<Int, Int>()
+        val newlyEnraged = mutableListOf<Int>()
 
         val updated = enemies.map { enemy ->
             val newEffects = mutableListOf<StatusEffect>()
@@ -41,19 +43,33 @@ class StatusEffectSystem {
                             )
                         }
                     }
+                    is StatusEffect.Enraged -> {
+                        // Enraged is permanent, always keep it
+                        newEffects.add(effect)
+                    }
                 }
             }
 
             enemy.copy(statusEffects = newEffects)
         }
 
-        // Apply poison damage
+        // Apply poison damage (bypasses armor)
         val withPoison = updated.map { enemy ->
             val dmg = poisonDamage[enemy.id] ?: return@map enemy
             enemy.copy(hp = enemy.hp - dmg)
         }
 
-        return Result(withPoison, poisonDamage)
+        // Check for boss enrage at 30% HP
+        val withEnrage = withPoison.map { enemy ->
+            if (enemy.isBoss && !enemy.isEnraged && enemy.hpPercentage <= 0.3f && !enemy.isDead) {
+                newlyEnraged.add(enemy.id)
+                applyEffect(enemy, StatusEffect.Enraged())
+            } else {
+                enemy
+            }
+        }
+
+        return Result(withEnrage, poisonDamage, newlyEnraged)
     }
 
     /** Apply a new status effect to an enemy, stacking or refreshing as appropriate. */
@@ -80,6 +96,12 @@ class StatusEffectSystem {
                 if (idx >= 0) {
                     existing[idx] = newEffect   // refresh
                 } else {
+                    existing.add(newEffect)
+                }
+            }
+            is StatusEffect.Enraged -> {
+                // Enraged is permanent, only apply once
+                if (existing.none { it is StatusEffect.Enraged }) {
                     existing.add(newEffect)
                 }
             }

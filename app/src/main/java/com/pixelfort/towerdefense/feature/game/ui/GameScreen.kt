@@ -203,6 +203,30 @@ fun GameScreen(
                 )
             }
 
+            // Boss warning banner
+            if (state.bossWarningActive) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .border(4.dp, Color(0xFFFF1744))
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.TopCenter)
+                            .padding(top = statusBarPadding + topBarHeightDp + 16.dp)
+                            .background(Color(0xDD8B0000), RoundedCornerShape(12.dp))
+                            .padding(horizontal = 24.dp, vertical = 12.dp)
+                    ) {
+                        Text(
+                            text = "BOSS INCOMING",
+                            color = Color(0xFFFFD700),
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    }
+                }
+            }
+
             // Flash effect overlay
             if (state.flashEffect.isActive) {
                 Box(
