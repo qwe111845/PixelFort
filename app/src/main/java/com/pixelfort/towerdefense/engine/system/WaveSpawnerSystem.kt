@@ -4,7 +4,12 @@ import com.pixelfort.towerdefense.engine.model.Enemy
 import com.pixelfort.towerdefense.engine.model.EnemyType
 import com.pixelfort.towerdefense.engine.model.Wave
 
-class WaveSpawnerSystem(private val waves: List<Wave>) {
+class WaveSpawnerSystem(waves: List<Wave>) {
+
+    private val waves = waves.toMutableList()
+
+    /** Add a wave dynamically (used for endless mode). */
+    fun addWave(wave: Wave) { waves.add(wave) }
 
     data class Result(
         val spawnedEnemies: List<Enemy>,
