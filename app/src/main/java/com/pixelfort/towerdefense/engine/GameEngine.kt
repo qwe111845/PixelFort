@@ -13,6 +13,7 @@ import com.pixelfort.towerdefense.engine.model.MetaBonus
 import com.pixelfort.towerdefense.engine.model.PlayerState
 import com.pixelfort.towerdefense.engine.model.Projectile
 import com.pixelfort.towerdefense.engine.model.Tower
+import com.pixelfort.towerdefense.engine.model.TowerEffect
 import com.pixelfort.towerdefense.engine.model.TowerType
 import com.pixelfort.towerdefense.engine.system.EnemyDeathSystem
 import com.pixelfort.towerdefense.engine.system.EnemyMovementSystem
@@ -31,7 +32,7 @@ class GameEngine(
 ) {
     private val eventBus        = GameEventBus()
     private val actionProcessor = ActionProcessor(level.map)
-    private val movementSystem  = EnemyMovementSystem(level.map.pathWaypoints, cellSize)
+    private val movementSystem  = EnemyMovementSystem(level.map.pathWaypoints, cellSize, level.cellEffects)
     private val targetingSystem = TowerTargetingSystem(cellSize)
     private val projectileSystem= ProjectileSystem(cellSize)
     private val statusSystem    = StatusEffectSystem()
@@ -84,7 +85,11 @@ class GameEngine(
             eventBus.emit(GameEvent.BossWarning(playerState.currentWave))
         }
 
-        enemies = movementSystem.moveAll(enemies, scaledDelta).toMutableList()
+        val movementResult = movementSystem.moveAllWithEffects(enemies, scaledDelta)
+        enemies = movementResult.enemies.toMutableList()
+        movementResult.lavaDamageEvents.forEach { evt ->
+            eventBus.emit(GameEvent.ProjectileHit(evt.pixelX, evt.pixelY, TowerEffect.None, evt.damage))
+        }
 
         val targetResult = targetingSystem.update(towers, enemies, scaledDelta)
         towers = targetResult.updatedTowers.toMutableList()

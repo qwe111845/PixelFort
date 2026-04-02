@@ -71,7 +71,9 @@ fun GameScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val gameplaySettings by viewModel.gameplaySettingsFlow.collectAsStateWithLifecycle(initialValue = GameplaySettingsData())
-    val map = Levels.getById(levelId).map
+    val levelDef = Levels.getById(levelId)
+    val map = levelDef.map
+    val cellEffects = levelDef.cellEffects
     val density = LocalDensity.current
 
     // FPS counter state
@@ -167,6 +169,7 @@ fun GameScreen(
                             snapshot = state.snapshot,
                             map = map,
                             cellSize = state.cellSize,
+                            cellEffects = cellEffects,
                             particles = state.particles,
                             floatingTexts = state.floatingTexts,
                             screenShake = state.screenShake,

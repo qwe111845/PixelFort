@@ -133,11 +133,105 @@ class LevelDefinitionTest {
     }
 
     @Nested
+    inner class Level4Tests {
+        private val level = Levels.level4
+
+        @Test fun `valid map dimensions`() {
+            assertEquals(14, level.map.rows)
+            assertEquals(10, level.map.cols)
+        }
+
+        @Test fun `path waypoints are all on PATH cells and axis-aligned`() {
+            assertPathIntegrity(level)
+        }
+
+        @Test fun `has 8 waves`() = assertEquals(8, level.waves.size)
+        @Test fun `starting gold is 350`() = assertEquals(350, level.startingGold)
+        @Test fun `starting lives is 25`() = assertEquals(25, level.startingLives)
+
+        @Test fun `has buildable cells`() {
+            assertTrue(level.map.grid.flatten().count { it == CellType.BUILDABLE } > 0)
+        }
+
+        @Test fun `has lava cell effects`() {
+            assertTrue(level.cellEffects.isNotEmpty(), "Level 4 should have lava cell effects")
+            assertTrue(
+                level.cellEffects.values.all { it is com.pixelfort.towerdefense.engine.model.CellEffect.LavaDamage },
+                "All cell effects in level 4 should be LavaDamage"
+            )
+        }
+
+        @Test fun `all lava cells are on PATH cells`() {
+            level.cellEffects.keys.forEach { point ->
+                assertEquals(
+                    CellType.PATH,
+                    level.map.getCellType(point.row, point.col),
+                    "Lava cell at (${point.row},${point.col}) must be on a PATH cell"
+                )
+            }
+        }
+    }
+
+    @Nested
+    inner class Level5Tests {
+        private val level = Levels.level5
+
+        @Test fun `valid map dimensions`() {
+            assertEquals(16, level.map.rows)
+            assertEquals(12, level.map.cols)
+        }
+
+        @Test fun `path waypoints are all on PATH cells and axis-aligned`() {
+            assertPathIntegrity(level)
+        }
+
+        @Test fun `has 10 waves`() = assertEquals(10, level.waves.size)
+        @Test fun `starting gold is 400`() = assertEquals(400, level.startingGold)
+        @Test fun `starting lives is 30`() = assertEquals(30, level.startingLives)
+
+        @Test fun `has buildable cells`() {
+            assertTrue(level.map.grid.flatten().count { it == CellType.BUILDABLE } > 0)
+        }
+
+        @Test fun `has teleport cell effect`() {
+            assertTrue(level.cellEffects.isNotEmpty(), "Level 5 should have teleport cell effects")
+            assertTrue(
+                level.cellEffects.values.any { it is com.pixelfort.towerdefense.engine.model.CellEffect.Teleport },
+                "Level 5 should have at least one Teleport effect"
+            )
+        }
+
+        @Test fun `teleport cell is on PATH cell`() {
+            level.cellEffects.keys.forEach { point ->
+                assertEquals(
+                    CellType.PATH,
+                    level.map.getCellType(point.row, point.col),
+                    "Teleport cell at (${point.row},${point.col}) must be on a PATH cell"
+                )
+            }
+        }
+
+        @Test fun `has double boss in final wave`() {
+            val finalWave = level.waves.last()
+            val bossCount = finalWave.groups
+                .filter { it.enemyType == com.pixelfort.towerdefense.engine.model.EnemyType.BOSS_DRAGON }
+                .sumOf { it.count }
+            assertTrue(bossCount >= 2, "Final wave should have at least 2 bosses, got $bossCount")
+        }
+    }
+
+    @Nested
     inner class AllLevels {
         @Test fun `getById returns correct levels`() {
             assertEquals(1, Levels.getById(1).id)
             assertEquals(2, Levels.getById(2).id)
             assertEquals(3, Levels.getById(3).id)
+            assertEquals(4, Levels.getById(4).id)
+            assertEquals(5, Levels.getById(5).id)
+        }
+
+        @Test fun `all levels list has 5 levels`() {
+            assertEquals(5, Levels.all.size)
         }
 
         @Test fun `all levels have valid path integrity`() {

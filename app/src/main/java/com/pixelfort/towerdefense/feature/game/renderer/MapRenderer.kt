@@ -5,6 +5,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import com.pixelfort.towerdefense.engine.model.CellEffect
 import com.pixelfort.towerdefense.engine.model.CellType
 import com.pixelfort.towerdefense.engine.model.GameMap
 import com.pixelfort.towerdefense.engine.model.GridPoint
@@ -20,7 +21,21 @@ object MapRenderer {
     private val blockedB  = Color(0xFF37474F)
     private val gridLine  = Color(0x22000000)
 
-    fun DrawScope.drawMap(map: GameMap, cellSize: Float) {
+    // Lava cell colors
+    private val lavaBase   = Color(0xFFE65100)
+    private val lavaAccent = Color(0xFFFF6D00)
+    private val lavaGlow   = Color(0x44FF3D00)
+
+    // Teleport portal colors
+    private val portalBase   = Color(0xFF4A148C)
+    private val portalAccent = Color(0xFF7C43BD)
+    private val portalGlow   = Color(0x446200EA)
+
+    fun DrawScope.drawMap(
+        map: GameMap,
+        cellSize: Float,
+        cellEffects: Map<GridPoint, CellEffect> = emptyMap()
+    ) {
         for (row in 0 until map.rows) {
             for (col in 0 until map.cols) {
                 val x = col * cellSize
@@ -50,6 +65,33 @@ object MapRenderer {
                 // Grid line
                 drawRect(gridLine, Offset(x, y), Size(cellSize, cellSize),
                     style = Stroke(cellSize * 0.025f))
+
+                // Overlay cell effects (lava / teleport)
+                val cellPoint = GridPoint(row, col)
+                when (val effect = cellEffects[cellPoint]) {
+                    is CellEffect.LavaDamage -> {
+                        // Orange/red lava tint over the path cell
+                        drawRect(lavaGlow, Offset(x, y), Size(cellSize, cellSize))
+                        drawRect(lavaBase, Offset(x, y), Size(cellSize, cellSize), alpha = 0.5f)
+                        // Lava cracks
+                        val d = cellSize * 0.1f
+                        drawRect(lavaAccent, Offset(x + d, y + d), Size(cellSize - d * 2, cellSize - d * 2), alpha = 0.3f)
+                        // Bright core dot
+                        val center = Offset(x + cellSize / 2, y + cellSize / 2)
+                        drawCircle(lavaAccent, radius = cellSize * 0.12f, center = center, alpha = 0.7f)
+                    }
+                    is CellEffect.Teleport -> {
+                        // Blue/purple portal glow
+                        drawRect(portalGlow, Offset(x, y), Size(cellSize, cellSize))
+                        drawRect(portalBase, Offset(x, y), Size(cellSize, cellSize), alpha = 0.4f)
+                        // Portal ring
+                        val center = Offset(x + cellSize / 2, y + cellSize / 2)
+                        drawCircle(portalAccent, radius = cellSize * 0.35f, center = center,
+                            style = Stroke(cellSize * 0.08f), alpha = 0.8f)
+                        drawCircle(portalAccent, radius = cellSize * 0.18f, center = center, alpha = 0.6f)
+                    }
+                    null -> { /* no effect */ }
+                }
             }
         }
 
