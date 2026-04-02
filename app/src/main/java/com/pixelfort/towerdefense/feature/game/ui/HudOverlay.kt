@@ -2,6 +2,7 @@ package com.pixelfort.towerdefense.feature.game.ui
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -28,11 +29,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.pixelfort.towerdefense.core.util.SpriteAssetLoader
 import com.pixelfort.towerdefense.engine.GameState
 import com.pixelfort.towerdefense.engine.model.EnemyType
 import com.pixelfort.towerdefense.engine.model.MetaBonus
@@ -66,6 +69,7 @@ fun HudOverlay(
     onStartWave: () -> Unit,
     onPause: () -> Unit,
     onShowTooltip: (TowerType) -> Unit = {},
+    spriteLoader: SpriteAssetLoader? = null,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -140,6 +144,7 @@ fun HudOverlay(
                     isUnlocked = isUnlocked,
                     isSelected = isSelected,
                     canAfford = canAfford,
+                    spriteLoader = spriteLoader,
                     onSelect = {
                         if (isUnlocked) {
                             onSelectTower(if (isSelected) null else towerType)
@@ -160,6 +165,7 @@ private fun TowerHudButton(
     isUnlocked: Boolean,
     isSelected: Boolean,
     canAfford: Boolean,
+    spriteLoader: SpriteAssetLoader? = null,
     onSelect: () -> Unit,
     onLongPress: () -> Unit,
     onInfoTap: () -> Unit
@@ -193,16 +199,26 @@ private fun TowerHudButton(
             )
             .padding(4.dp)
     ) {
-        // Mini tower canvas preview
+        // Tower icon preview (PNG sprite or fallback to pixel art)
         Box(modifier = Modifier.size(44.dp)) {
             if (isUnlocked) {
-                Canvas(modifier = Modifier.size(44.dp)) {
-                    val previewCell = size.width
-                    drawTowers(
-                        towers = listOf(Tower(id = 0, type = towerType, level = 1, gridRow = 0, gridCol = 0)),
-                        cellSize = previewCell,
-                        selectedTowerId = null
+                val sprite = spriteLoader?.getTowerSprite(towerType, 1)
+                if (sprite != null) {
+                    Image(
+                        bitmap = sprite,
+                        contentDescription = towerType.nameZh,
+                        contentScale = ContentScale.Fit,
+                        modifier = Modifier.size(44.dp)
                     )
+                } else {
+                    Canvas(modifier = Modifier.size(44.dp)) {
+                        val previewCell = size.width
+                        drawTowers(
+                            towers = listOf(Tower(id = 0, type = towerType, level = 1, gridRow = 0, gridCol = 0)),
+                            cellSize = previewCell,
+                            selectedTowerId = null
+                        )
+                    }
                 }
                 if (!canAfford) {
                     Box(
