@@ -20,6 +20,7 @@ sealed interface GameUiState {
         val screenShake: ScreenShake = ScreenShake.IDLE,
         val flashEffect: FlashEffect = FlashEffect.NONE,
         val metaBonus: MetaBonus = MetaBonus(),
-        val cellSize: Float = 80f
+        val cellSize: Float = 80f,
+        val elapsedMs: Long = 0L
     ) : GameUiState
 }

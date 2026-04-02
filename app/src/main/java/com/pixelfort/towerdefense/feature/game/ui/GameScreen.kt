@@ -133,6 +133,8 @@ fun GameScreen(
                             floatingTexts = state.floatingTexts,
                             screenShake = state.screenShake,
                             selectedTowerId = state.selectedTowerId,
+                            spriteLoader = viewModel.spriteLoader,
+                            elapsedMs = state.elapsedMs,
                             onCellTapped = viewModel::onCellTapped,
                             modifier = Modifier.size(gameWidthDp, gameHeightDp)
                         )

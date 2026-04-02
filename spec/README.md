@@ -45,6 +45,7 @@
 |----|-------|--------|--------|
 | BUG-001 | Enemy Path Alignment + Direction Indicator | COMPLETED | fix/bug-001-path-alignment |
 | BUG-002 | Tower Tooltip as Floating Overlay | COMPLETED | fix/bug-002-tooltip-overlay |
+| BUG-003 | Status Bar Overlapping UI Buttons | READY | - |
 
 ### Ready to Develop
 
@@ -62,3 +63,7 @@
 | SPEC-021 | Advanced VFX (Trails, Animations, Environment) | READY | - |
 | SPEC-022 | Content Balance + More Levels | READY | - |
 | SPEC-023 | Polish and Release | READY | - |
+| SPEC-024 | Sprite Art Integration (PNG Assets) | IN PROGRESS | feature/024-sprite-art-integration |
+| SPEC-025 | Sprite Quality Fix (去背 + Consistency) | READY | - |
+| SPEC-026 | Extra Assets Integration (Icon, BG, Result) | READY | - |
+| SPEC-027 | Attack Animations & VFX | READY | - |

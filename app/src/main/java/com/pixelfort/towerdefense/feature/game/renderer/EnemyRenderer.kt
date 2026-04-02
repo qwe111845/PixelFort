@@ -5,23 +5,55 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
+import com.pixelfort.towerdefense.core.util.SpriteAssetLoader
 import com.pixelfort.towerdefense.engine.model.Enemy
 import com.pixelfort.towerdefense.engine.model.EnemyType
 
 object EnemyRenderer {
 
-    fun DrawScope.drawEnemies(enemies: List<Enemy>, cellSize: Float) {
+    fun DrawScope.drawEnemies(
+        enemies: List<Enemy>,
+        cellSize: Float,
+        spriteLoader: SpriteAssetLoader? = null,
+        elapsedMs: Long = 0L
+    ) {
         for (enemy in enemies) {
             val sc = cellSize / 10f * enemy.type.size
             val cx = enemy.pixelX
             val cy = enemy.pixelY
 
-            when (enemy.type) {
-                EnemyType.GOBLIN  -> drawGoblin(cx, cy, sc)
-                EnemyType.ORC     -> drawOrc(cx, cy, sc)
-                EnemyType.DRAGON  -> drawDragon(cx, cy, sc)
-                EnemyType.TROLL   -> drawTroll(cx, cy, sc)
-                EnemyType.SPECTER -> drawSpecter(cx, cy, sc)
+            // Try PNG sprite first
+            val frame = if ((elapsedMs / 300L) % 2 == 0L) 1 else 2
+            val sprite = if (enemy.isPoisoned || enemy.isSlowed) {
+                // Check for boss enrage sprite (future: when StatusEffect.Enraged exists)
+                spriteLoader?.getEnemySprite(enemy.type, frame)
+            } else {
+                spriteLoader?.getEnemySprite(enemy.type, frame)
+            }
+
+            if (sprite != null) {
+                val spriteSize = (cellSize * enemy.type.size * 0.85f).toInt()
+                drawImage(
+                    image = sprite,
+                    srcOffset = IntOffset.Zero,
+                    srcSize = IntSize(sprite.width, sprite.height),
+                    dstOffset = IntOffset(
+                        (cx - spriteSize / 2f).toInt(),
+                        (cy - spriteSize / 2f).toInt()
+                    ),
+                    dstSize = IntSize(spriteSize, spriteSize)
+                )
+            } else {
+                // Fallback: procedural pixel art
+                when (enemy.type) {
+                    EnemyType.GOBLIN  -> drawGoblin(cx, cy, sc)
+                    EnemyType.ORC     -> drawOrc(cx, cy, sc)
+                    EnemyType.DRAGON  -> drawDragon(cx, cy, sc)
+                    EnemyType.TROLL   -> drawTroll(cx, cy, sc)
+                    EnemyType.SPECTER -> drawSpecter(cx, cy, sc)
+                }
             }
 
             // Slow frost tint overlay
