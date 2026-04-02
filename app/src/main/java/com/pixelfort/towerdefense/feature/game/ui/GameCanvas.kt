@@ -24,6 +24,8 @@ import com.pixelfort.towerdefense.feature.game.renderer.EnemyRenderer.drawEnemie
 import com.pixelfort.towerdefense.feature.game.renderer.FloatingTextRenderer.drawFloatingTexts
 import com.pixelfort.towerdefense.feature.game.renderer.MapRenderer.drawMap
 import com.pixelfort.towerdefense.feature.game.renderer.ProjectileRenderer.drawProjectiles
+import com.pixelfort.towerdefense.feature.game.renderer.RangeOverlayRenderer.drawDistanceToPathText
+import com.pixelfort.towerdefense.feature.game.renderer.RangeOverlayRenderer.drawRangeOverlay
 import com.pixelfort.towerdefense.feature.game.renderer.TowerRenderer.drawGhostTower
 import com.pixelfort.towerdefense.feature.game.renderer.TowerRenderer.drawTowers
 import com.pixelfort.towerdefense.feature.game.renderer.VfxRenderer.drawAmbientParticles
@@ -93,6 +95,23 @@ fun GameCanvas(
         translate(shakeX, shakeY) {
             drawMap(map, cellSize, cellEffects)
             drawAmbientParticles(ambientParticles)
+
+            // Range overlay for selected placed tower (R2 + R3)
+            if (selectedTowerId != null) {
+                val selectedTower = snapshot.towers.find { it.id == selectedTowerId }
+                if (selectedTower != null) {
+                    drawRangeOverlay(
+                        centerRow = selectedTower.gridRow,
+                        centerCol = selectedTower.gridCol,
+                        range = selectedTower.stats.range,
+                        cellSize = cellSize,
+                        gameMap = map,
+                        textMeasurer = textMeasurer,
+                        showRangeText = true
+                    )
+                }
+            }
+
             drawTowers(snapshot.towers, cellSize, selectedTowerId, spriteLoader, elapsedMs)
             drawCombos(snapshot.activeCombos, snapshot.towers, cellSize, elapsedMs)
             drawEnemies(snapshot.enemies, cellSize, spriteLoader, elapsedMs, deathFlashes)
@@ -113,6 +132,17 @@ fun GameCanvas(
                             it.gridRow == ghostRow && it.gridCol == ghostCol
                         }
                         val isValid = isBuildable && !isOccupied
+
+                        // Range overlay for ghost placement (R1 + R3)
+                        val ghostStats = selectedTowerType.statsForLevel(1)
+                        drawRangeOverlay(
+                            centerRow = ghostRow,
+                            centerCol = ghostCol,
+                            range = ghostStats.range,
+                            cellSize = cellSize,
+                            gameMap = map
+                        )
+
                         drawGhostTower(
                             towerType = selectedTowerType,
                             gridRow = ghostRow,
@@ -120,6 +150,16 @@ fun GameCanvas(
                             cellSize = cellSize,
                             isValid = isValid,
                             spriteLoader = spriteLoader
+                        )
+
+                        // Distance to nearest path text (R4)
+                        drawDistanceToPathText(
+                            ghostRow = ghostRow,
+                            ghostCol = ghostCol,
+                            range = ghostStats.range,
+                            cellSize = cellSize,
+                            gameMap = map,
+                            textMeasurer = textMeasurer
                         )
                     }
                 }
