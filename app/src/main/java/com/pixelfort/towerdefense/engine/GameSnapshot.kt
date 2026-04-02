@@ -10,6 +10,7 @@ import com.pixelfort.towerdefense.engine.model.Tower
 import com.pixelfort.towerdefense.engine.model.ActiveCombo
 import com.pixelfort.towerdefense.engine.model.DifficultyMode
 import com.pixelfort.towerdefense.engine.model.EnemyType
+import com.pixelfort.towerdefense.engine.model.SkillState
 
 data class GameSnapshot(
     val state: GameState,
@@ -36,5 +37,9 @@ data class GameSnapshot(
     /** Total kills in this run (used for endless high score) */
     val totalKills: Int = 0,
     /** SPEC-028: Currently active tower combos */
-    val activeCombos: List<ActiveCombo> = emptyList()
+    val activeCombos: List<ActiveCombo> = emptyList(),
+    /** SPEC-029: Active skill states */
+    val skills: List<SkillState> = emptyList(),
+    /** SPEC-029: Current gold multiplier from Gold Rush */
+    val goldMultiplier: Float = 1.0f
 )

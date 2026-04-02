@@ -11,6 +11,7 @@ import com.pixelfort.towerdefense.engine.action.GameAction
 import com.pixelfort.towerdefense.engine.level.Levels
 import com.pixelfort.towerdefense.engine.model.DifficultyMode
 import com.pixelfort.towerdefense.engine.model.MetaBonus
+import com.pixelfort.towerdefense.engine.model.SkillType
 import com.pixelfort.towerdefense.engine.model.TowerType
 import com.pixelfort.towerdefense.engine.event.GameEvent
 import com.pixelfort.towerdefense.engine.model.TowerEffect
@@ -72,6 +73,7 @@ class GameViewModel @Inject constructor(
     private var gameLoopJob: Job? = null
     private var selectedTowerType: TowerType? = null
     private var selectedTowerId: Int? = null
+    private var isMeteorTargeting = false
     private var gameEndHandled = false
     private var gameElapsedMs: Long = 0L
 
@@ -136,6 +138,24 @@ class GameViewModel @Inject constructor(
 
     fun onCellTapped(gridRow: Int, gridCol: Int) {
         val eng = engine ?: return
+
+        // SPEC-029: If meteor targeting, confirm the strike
+        if (isMeteorTargeting) {
+            eng.processAction(
+                GameAction.UseSkill(SkillType.METEOR_STRIKE, gridRow, gridCol)
+            )
+            isMeteorTargeting = false
+            // Trigger screen shake for meteor
+            if (_currentGameplaySettings.screenShakeEnabled) {
+                screenShake = screenShake.trigger(20f, 500L)
+            }
+            flashEffect = flashEffect.trigger(
+                androidx.compose.ui.graphics.Color(0xFFFF6F00), 150L
+            )
+            emitState()
+            return
+        }
+
         val towerType = selectedTowerType
         if (towerType != null) {
             val placed = eng.processAction(GameAction.PlaceTower(towerType, gridRow, gridCol))
@@ -158,6 +178,31 @@ class GameViewModel @Inject constructor(
         val towerId = selectedTowerId ?: return
         engine?.processAction(GameAction.SellTower(towerId))
         selectedTowerId = null
+        emitState()
+    }
+
+    /** SPEC-029: Handle skill button tap */
+    fun onSkillTapped(type: SkillType) {
+        when (type) {
+            SkillType.METEOR_STRIKE -> {
+                // Toggle meteor targeting mode
+                isMeteorTargeting = !isMeteorTargeting
+                if (isMeteorTargeting) {
+                    selectedTowerType = null
+                    selectedTowerId = null
+                }
+                emitState()
+            }
+            else -> {
+                // Immediate activation
+                engine?.processAction(GameAction.UseSkill(type))
+                emitState()
+            }
+        }
+    }
+
+    fun cancelMeteorTargeting() {
+        isMeteorTargeting = false
         emitState()
     }
 
@@ -308,6 +353,21 @@ class GameViewModel @Inject constructor(
                         androidx.compose.ui.graphics.Color(0xFFFF6F00), 200L
                     )
                 }
+                is GameEvent.SkillUsed -> {
+                    when (event.type) {
+                        SkillType.FROZEN_TIME -> {
+                            flashEffect = flashEffect.trigger(
+                                androidx.compose.ui.graphics.Color(0xFF00BCD4), 200L
+                            )
+                        }
+                        SkillType.GOLD_RUSH -> {
+                            flashEffect = flashEffect.trigger(
+                                androidx.compose.ui.graphics.Color(0xFFFFD700), 150L
+                            )
+                        }
+                        else -> Unit
+                    }
+                }
                 else -> Unit
             }
         }
@@ -325,6 +385,7 @@ class GameViewModel @Inject constructor(
             snapshot = eng.snapshot(),
             selectedTowerType = selectedTowerType,
             selectedTowerId = selectedTowerId,
+            isMeteorTargeting = isMeteorTargeting,
             particles = particleSystem.activeParticles,
             floatingTexts = floatingTextSystem.activeTexts,
             screenShake = screenShake,

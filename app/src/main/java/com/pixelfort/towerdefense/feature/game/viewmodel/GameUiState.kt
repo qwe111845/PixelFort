@@ -19,6 +19,7 @@ sealed interface GameUiState {
         val snapshot: GameSnapshot,
         val selectedTowerType: TowerType? = null,
         val selectedTowerId: Int? = null,
+        val isMeteorTargeting: Boolean = false,
         val particles: List<Particle> = emptyList(),
         val floatingTexts: List<FloatingText> = emptyList(),
         val screenShake: ScreenShake = ScreenShake.IDLE,

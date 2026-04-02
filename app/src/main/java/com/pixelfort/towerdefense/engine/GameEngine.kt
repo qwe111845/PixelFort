@@ -16,11 +16,13 @@ import com.pixelfort.towerdefense.engine.model.Tower
 import com.pixelfort.towerdefense.engine.model.TowerEffect
 import com.pixelfort.towerdefense.engine.model.TowerType
 import com.pixelfort.towerdefense.engine.model.ActiveCombo
+import com.pixelfort.towerdefense.engine.model.SkillType
 import com.pixelfort.towerdefense.engine.system.ComboSystem
 import com.pixelfort.towerdefense.engine.system.EnemyDeathSystem
 import com.pixelfort.towerdefense.engine.system.EnemyMovementSystem
 import com.pixelfort.towerdefense.engine.system.EndReachSystem
 import com.pixelfort.towerdefense.engine.system.ProjectileSystem
+import com.pixelfort.towerdefense.engine.system.SkillSystem
 import com.pixelfort.towerdefense.engine.system.StatusEffectSystem
 import com.pixelfort.towerdefense.engine.system.TowerTargetingSystem
 import com.pixelfort.towerdefense.engine.system.WaveSpawnerSystem
@@ -44,6 +46,7 @@ class GameEngine(
     )
     private val deathSystem     = EnemyDeathSystem()
     private val endReachSystem  = EndReachSystem()
+    private val skillSystem     = SkillSystem(cellSize)
 
     private var towers      = mutableListOf<Tower>()
     private var enemies     = mutableListOf<Enemy>()
@@ -67,6 +70,9 @@ class GameEngine(
         if (state != GameState.Playing) return
         eventBus.clear()
         val scaledDelta = (deltaMs * speedMultiplier).toLong()
+
+        // SPEC-029: Tick skill cooldowns in real-time (not affected by game speed)
+        skillSystem.tickCooldowns(deltaMs)
 
         val statusResult = statusSystem.update(enemies, scaledDelta)
         enemies = statusResult.updatedEnemies.toMutableList()
@@ -108,8 +114,11 @@ class GameEngine(
 
         val deathResult = deathSystem.update(enemies)
         enemies = deathResult.survivors.toMutableList()
-        if (deathResult.goldEarned > 0)
-            playerState = playerState.earnGold(deathResult.goldEarned)
+        if (deathResult.goldEarned > 0) {
+            // SPEC-029: Apply Gold Rush multiplier
+            val effectiveGold = (deathResult.goldEarned * skillSystem.getGoldMultiplier()).toInt()
+            playerState = playerState.earnGold(effectiveGold)
+        }
         totalKills += deathResult.killedEnemies.size
         deathResult.killedEnemies.forEach { killed ->
             eventBus.emit(GameEvent.EnemyKilled(
@@ -130,6 +139,18 @@ class GameEngine(
     fun processAction(action: GameAction): Boolean {
         if (action is GameAction.SetSpeed) {
             speedMultiplier = action.multiplier.coerceIn(1f, 3f)
+            return true
+        }
+
+        // SPEC-029: Handle skill usage directly (no validation needed from ActionProcessor)
+        if (action is GameAction.UseSkill) {
+            val result = skillSystem.useSkill(
+                action.type, enemies, action.targetGridRow, action.targetGridCol
+            ) ?: return false
+            enemies = result.enemies.toMutableList()
+            eventBus.emit(
+                GameEvent.SkillUsed(action.type, result.meteorPixelX, result.meteorPixelY)
+            )
             return true
         }
 
@@ -175,6 +196,7 @@ class GameEngine(
                 }
             }
             is GameAction.SetSpeed -> { /* handled above, unreachable */ }
+            is GameAction.UseSkill -> { /* handled above, unreachable */ }
         }
         return true
     }
@@ -204,7 +226,9 @@ class GameEngine(
         difficulty      = difficulty,
         isEndless       = isEndless,
         totalKills      = totalKills,
-        activeCombos    = activeCombos
+        activeCombos    = activeCombos,
+        skills          = skillSystem.getSkills(),
+        goldMultiplier  = skillSystem.getGoldMultiplier()
     )
 
     /** Expose active combos for the ProjectileSystem to apply damage bonuses. */

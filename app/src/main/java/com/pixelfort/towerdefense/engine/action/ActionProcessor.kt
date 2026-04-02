@@ -23,6 +23,7 @@ class ActionProcessor(private val map: GameMap) {
         is GameAction.SellTower -> validateSellTower(action, towers)
         is GameAction.StartWave -> ValidationResult(isValid = true)
         is GameAction.SetSpeed -> ValidationResult(isValid = true)
+        is GameAction.UseSkill -> ValidationResult(isValid = true) // validated in SkillSystem
     }
 
     private fun validatePlaceTower(
