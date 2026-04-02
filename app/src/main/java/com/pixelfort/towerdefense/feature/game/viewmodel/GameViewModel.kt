@@ -25,7 +25,9 @@ import com.pixelfort.towerdefense.feature.game.vfx.ScreenShake
 import com.pixelfort.towerdefense.feature.game.vfx.SellEffect
 import com.pixelfort.towerdefense.feature.game.vfx.TrailSystem
 import com.pixelfort.towerdefense.core.util.SpriteAssetLoader
+import com.pixelfort.towerdefense.core.database.dao.BestiaryDao
 import com.pixelfort.towerdefense.core.database.dao.EndlessHighScoreDao
+import com.pixelfort.towerdefense.core.database.entity.BestiaryEntity
 import com.pixelfort.towerdefense.core.database.entity.EndlessHighScoreEntity
 import com.pixelfort.towerdefense.feature.metaupgrade.domain.MetaUpgradeRepository
 import com.pixelfort.towerdefense.feature.progress.domain.ProgressRepository
@@ -44,6 +46,7 @@ class GameViewModel @Inject constructor(
     private val metaUpgradeRepository: MetaUpgradeRepository,
     private val progressRepository: ProgressRepository,
     private val endlessHighScoreDao: EndlessHighScoreDao,
+    private val bestiaryDao: BestiaryDao,
     val spriteLoader: SpriteAssetLoader,
     private val settingsDataStore: SettingsDataStore
 ) : ViewModel() {
@@ -77,6 +80,14 @@ class GameViewModel @Inject constructor(
     private var isMeteorTargeting = false
     private var gameEndHandled = false
     private var gameElapsedMs: Long = 0L
+
+    // SPEC-031: Track which enemy types have been newly unlocked in this session for toast
+    private val newlyUnlockedTypes = mutableSetOf<String>()
+
+    private val _bestiaryToast = MutableStateFlow<String?>(null)
+    val bestiaryToast: StateFlow<String?> = _bestiaryToast.asStateFlow()
+
+    fun clearBestiaryToast() { _bestiaryToast.value = null }
 
     // SPEC-030: Sell confirmation and VFX state
     private var sellConfirmTowerId: Int? = null
@@ -309,7 +320,7 @@ class GameViewModel @Inject constructor(
                 // Update ambient particles
                 ambientSystem?.update(deltaMs)
 
-                // Process death flashes from EnemyKilled events
+                // Process death flashes from EnemyKilled events + bestiary updates
                 for (event in snapshot.events) {
                     if (event is GameEvent.EnemyKilled) {
                         deathFlashes.add(
@@ -320,6 +331,8 @@ class GameViewModel @Inject constructor(
                                 remainingMs = DeathFlash.FLASH_DURATION_MS
                             )
                         )
+                        // SPEC-031: Update bestiary entry
+                        updateBestiary(event)
                     }
                 }
                 // Update and prune death flashes
@@ -366,6 +379,37 @@ class GameViewModel @Inject constructor(
                 if (endState == GameState.WaitingForWave) {
                     break
                 }
+            }
+        }
+    }
+
+    /** SPEC-031: Record enemy kill in bestiary DB and show toast for first-time unlocks. */
+    private fun updateBestiary(event: GameEvent.EnemyKilled) {
+        val typeName = event.enemyType.name
+        viewModelScope.launch {
+            val existing = bestiaryDao.getByType(typeName)
+            val now = System.currentTimeMillis()
+            if (existing == null) {
+                bestiaryDao.upsert(
+                    BestiaryEntity(
+                        enemyType = typeName,
+                        defeatedCount = 1,
+                        firstDefeatedAt = now,
+                        maxHitDamage = event.reward // approximate; reward as proxy
+                    )
+                )
+                // First-time unlock toast
+                if (newlyUnlockedTypes.add(typeName)) {
+                    _bestiaryToast.value =
+                        "New Entry! ${event.enemyType.nameZh} added to Bestiary"
+                }
+            } else {
+                bestiaryDao.upsert(
+                    existing.copy(
+                        defeatedCount = existing.defeatedCount + 1,
+                        maxHitDamage = maxOf(existing.maxHitDamage, event.reward)
+                    )
+                )
             }
         }
     }

@@ -5,6 +5,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
+import com.pixelfort.towerdefense.feature.bestiary.BestiaryDetailScreen
+import com.pixelfort.towerdefense.feature.bestiary.BestiaryScreen
 import com.pixelfort.towerdefense.feature.game.ui.GameScreen
 import com.pixelfort.towerdefense.feature.levelselect.LevelSelectScreen
 import com.pixelfort.towerdefense.feature.menu.ui.MainMenuScreen
@@ -26,6 +28,9 @@ fun AppNavGraph() {
                 },
                 onSettings = {
                     navController.navigate(Routes.Settings)
+                },
+                onBestiary = {
+                    navController.navigate(Routes.Bestiary)
                 }
             )
         }
@@ -73,6 +78,27 @@ fun AppNavGraph() {
 
         composable<Routes.Settings> {
             SettingsScreen(
+                onBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        composable<Routes.Bestiary> {
+            BestiaryScreen(
+                onBack = {
+                    navController.popBackStack()
+                },
+                onEntryClick = { enemyType ->
+                    navController.navigate(Routes.BestiaryDetail(enemyType = enemyType.name))
+                }
+            )
+        }
+
+        composable<Routes.BestiaryDetail> { backStackEntry ->
+            val route = backStackEntry.toRoute<Routes.BestiaryDetail>()
+            BestiaryDetailScreen(
+                enemyTypeName = route.enemyType,
                 onBack = {
                     navController.popBackStack()
                 }
