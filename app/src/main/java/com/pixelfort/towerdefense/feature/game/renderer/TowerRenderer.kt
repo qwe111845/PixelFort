@@ -69,10 +69,8 @@ object TowerRenderer {
                 )
             }
 
-            // Convert facing angle from radians to degrees for Canvas rotation
-            val rotationDegrees = Math.toDegrees(tower.facingAngle.toDouble()).toFloat()
-
             // Try PNG sprite first, fall back to procedural
+            // Note: Tower rotation disabled — rotating the full sprite makes tower shapes unrecognizable
             val sprite = spriteLoader?.getTowerSprite(tower.type, tower.level)
             if (sprite != null) {
                 // Idle breathing: subtle scale oscillation
@@ -86,31 +84,27 @@ object TowerRenderer {
 
                 val finalScale = breathScale * attackScale
                 val spriteSize = (cellSize * 0.85f * finalScale).toInt()
-                rotate(degrees = rotationDegrees, pivot = Offset(cx, cy)) {
-                    drawImage(
-                        image = sprite,
-                        srcOffset = IntOffset.Zero,
-                        srcSize = IntSize(sprite.width, sprite.height),
-                        dstOffset = IntOffset(
-                            (cx - spriteSize / 2f).toInt(),
-                            (cy - spriteSize / 2f).toInt()
-                        ),
-                        dstSize = IntSize(spriteSize, spriteSize)
-                    )
-                }
+                drawImage(
+                    image = sprite,
+                    srcOffset = IntOffset.Zero,
+                    srcSize = IntSize(sprite.width, sprite.height),
+                    dstOffset = IntOffset(
+                        (cx - spriteSize / 2f).toInt(),
+                        (cy - spriteSize / 2f).toInt()
+                    ),
+                    dstSize = IntSize(spriteSize, spriteSize)
+                )
             } else {
-                // Fallback: procedural pixel art with rotation
-                rotate(degrees = rotationDegrees, pivot = Offset(cx, cy)) {
-                    when (tower.type) {
-                        TowerType.ARCHER    -> drawArcher(cx, cy, sc, tower.level)
-                        TowerType.CANNON    -> drawCannon(cx, cy, sc, tower.level)
-                        TowerType.MAGIC     -> drawMagic(cx, cy, sc, tower.level)
-                        TowerType.SNIPER    -> drawSniper(cx, cy, sc, tower.level)
-                        TowerType.FROST     -> drawFrost(cx, cy, sc, tower.level)
-                        TowerType.LIGHTNING -> drawLightning(cx, cy, sc, tower.level)
-                        TowerType.POISON    -> drawPoison(cx, cy, sc, tower.level)
-                        TowerType.BOMB      -> drawBomb(cx, cy, sc, tower.level)
-                    }
+                // Fallback: procedural pixel art (no rotation)
+                when (tower.type) {
+                    TowerType.ARCHER    -> drawArcher(cx, cy, sc, tower.level)
+                    TowerType.CANNON    -> drawCannon(cx, cy, sc, tower.level)
+                    TowerType.MAGIC     -> drawMagic(cx, cy, sc, tower.level)
+                    TowerType.SNIPER    -> drawSniper(cx, cy, sc, tower.level)
+                    TowerType.FROST     -> drawFrost(cx, cy, sc, tower.level)
+                    TowerType.LIGHTNING -> drawLightning(cx, cy, sc, tower.level)
+                    TowerType.POISON    -> drawPoison(cx, cy, sc, tower.level)
+                    TowerType.BOMB      -> drawBomb(cx, cy, sc, tower.level)
                 }
             }
 
