@@ -62,6 +62,8 @@ import kotlinx.coroutines.delay
 @Composable
 fun GameScreen(
     levelId: Int,
+    difficulty: String = "NORMAL",
+    isEndless: Boolean = false,
     onBack: () -> Unit,
     onGoToUpgrades: () -> Unit,
     viewModel: GameViewModel = hiltViewModel()
@@ -287,6 +289,9 @@ fun GameScreen(
                     isVictory = false,
                     starsEarned = 0,
                     rpEarned = 0,
+                    isEndless = snapshot.isEndless,
+                    wavesReached = snapshot.currentWave,
+                    totalKills = snapshot.totalKills,
                     onBack = onBack,
                     onGoToUpgrades = onGoToUpgrades
                 )
@@ -382,7 +387,7 @@ private fun TopInfoBar(
         }
         // Wave indicator
         Text(
-            text = "第 ${currentWave + 1}/$totalWaves 波",
+            text = if (totalWaves == Int.MAX_VALUE) "第 ${currentWave + 1} 波" else "第 ${currentWave + 1}/$totalWaves 波",
             color = Color(0xFFBBCCDD),
             fontSize = 13.sp
         )
@@ -455,6 +460,9 @@ private fun GameEndOverlay(
     isVictory: Boolean,
     starsEarned: Int,
     rpEarned: Int,
+    isEndless: Boolean = false,
+    wavesReached: Int = 0,
+    totalKills: Int = 0,
     onBack: () -> Unit,
     onGoToUpgrades: () -> Unit
 ) {
@@ -495,8 +503,8 @@ private fun GameEndOverlay(
             }
 
             Text(
-                text = if (isVictory) "🏆 勝利！" else "💀 失敗",
-                color = if (isVictory) Color(0xFFFFD700) else Color(0xFFEF5350),
+                text = if (isEndless) "無盡模式結束" else if (isVictory) "勝利！" else "失敗",
+                color = if (isVictory) Color(0xFFFFD700) else if (isEndless) Color(0xFFCE93D8) else Color(0xFFEF5350),
                 fontSize = 32.sp,
                 fontWeight = FontWeight.Bold
             )

@@ -3,6 +3,7 @@ package com.pixelfort.towerdefense.feature.game.viewmodel
 import com.pixelfort.towerdefense.engine.GameSnapshot
 import com.pixelfort.towerdefense.engine.model.MetaBonus
 import com.pixelfort.towerdefense.engine.model.TowerType
+import com.pixelfort.towerdefense.feature.game.tutorial.TutorialState
 import com.pixelfort.towerdefense.feature.game.vfx.FlashEffect
 import com.pixelfort.towerdefense.feature.game.vfx.FloatingText
 import com.pixelfort.towerdefense.feature.game.vfx.Particle
@@ -22,6 +23,7 @@ sealed interface GameUiState {
         val metaBonus: MetaBonus = MetaBonus(),
         val cellSize: Float = 80f,
         val elapsedMs: Long = 0L,
-        val bossWarningActive: Boolean = false
+        val bossWarningActive: Boolean = false,
+        val tutorialState: TutorialState = TutorialState(isActive = false, isCompleted = true)
     ) : GameUiState
 }

@@ -32,8 +32,11 @@ fun AppNavGraph() {
 
         composable<Routes.LevelSelect> {
             LevelSelectScreen(
-                onStartLevel = { levelId ->
-                    navController.navigate(Routes.Game(levelId = levelId))
+                onStartLevel = { levelId, difficulty ->
+                    navController.navigate(Routes.Game(levelId = levelId, difficulty = difficulty))
+                },
+                onStartEndless = {
+                    navController.navigate(Routes.Game(levelId = 1, isEndless = true))
                 },
                 onGoToUpgrades = {
                     navController.navigate(Routes.MetaUpgrade)
@@ -48,6 +51,8 @@ fun AppNavGraph() {
             val route = backStackEntry.toRoute<Routes.Game>()
             GameScreen(
                 levelId = route.levelId,
+                difficulty = route.difficulty,
+                isEndless = route.isEndless,
                 onBack = {
                     navController.popBackStack()
                 },

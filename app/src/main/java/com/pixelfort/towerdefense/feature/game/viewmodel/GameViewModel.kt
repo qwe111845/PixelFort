@@ -3,21 +3,24 @@ package com.pixelfort.towerdefense.feature.game.viewmodel
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.pixelfort.towerdefense.core.datastore.GameplaySettingsData
-import com.pixelfort.towerdefense.core.datastore.SettingsDataStore
 import com.pixelfort.towerdefense.engine.GameEngine
 import com.pixelfort.towerdefense.engine.GameState
 import com.pixelfort.towerdefense.engine.action.GameAction
 import com.pixelfort.towerdefense.engine.level.Levels
+import com.pixelfort.towerdefense.engine.model.DifficultyMode
 import com.pixelfort.towerdefense.engine.model.MetaBonus
 import com.pixelfort.towerdefense.engine.model.TowerType
 import com.pixelfort.towerdefense.engine.event.GameEvent
 import com.pixelfort.towerdefense.engine.model.TowerEffect
+import com.pixelfort.towerdefense.core.datastore.SettingsDataStore
+import com.pixelfort.towerdefense.feature.game.tutorial.TutorialState
 import com.pixelfort.towerdefense.feature.game.vfx.FlashEffect
 import com.pixelfort.towerdefense.feature.game.vfx.FloatingTextSystem
 import com.pixelfort.towerdefense.feature.game.vfx.ParticleSystem
 import com.pixelfort.towerdefense.feature.game.vfx.ScreenShake
 import com.pixelfort.towerdefense.core.util.SpriteAssetLoader
+import com.pixelfort.towerdefense.core.database.dao.EndlessHighScoreDao
+import com.pixelfort.towerdefense.core.database.entity.EndlessHighScoreEntity
 import com.pixelfort.towerdefense.feature.metaupgrade.domain.MetaUpgradeRepository
 import com.pixelfort.towerdefense.feature.progress.domain.ProgressRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -34,11 +37,16 @@ class GameViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val metaUpgradeRepository: MetaUpgradeRepository,
     private val progressRepository: ProgressRepository,
+    private val endlessHighScoreDao: EndlessHighScoreDao,
     val spriteLoader: SpriteAssetLoader,
     private val settingsDataStore: SettingsDataStore
 ) : ViewModel() {
 
     private val levelId: Int = savedStateHandle.get<Int>("levelId") ?: 1
+    private val difficulty: DifficultyMode = try {
+        DifficultyMode.valueOf(savedStateHandle.get<String>("difficulty") ?: "NORMAL")
+    } catch (_: Exception) { DifficultyMode.NORMAL }
+    private val isEndless: Boolean = savedStateHandle.get<Boolean>("isEndless") ?: false
 
     private val particleSystem = ParticleSystem()
     private val floatingTextSystem = FloatingTextSystem()
@@ -48,6 +56,8 @@ class GameViewModel @Inject constructor(
     private var engine: GameEngine? = null
     private var currentCellSize: Float = 80f
     private var bossWarningRemainingMs: Long = 0L
+    private var tutorialState = TutorialState(isActive = false, isCompleted = true)
+    private var tutorialStateInitialized = false
 
     private val _uiState = MutableStateFlow<GameUiState>(GameUiState.Loading)
     val uiState: StateFlow<GameUiState> = _uiState.asStateFlow()
@@ -58,12 +68,16 @@ class GameViewModel @Inject constructor(
     private var gameEndHandled = false
     private var gameElapsedMs: Long = 0L
 
-    val gameplaySettingsFlow = settingsDataStore.settingsFlow
-    private var _currentGameplaySettings = GameplaySettingsData()
-
     init {
         viewModelScope.launch {
-            settingsDataStore.settingsFlow.collect { _currentGameplaySettings = it }
+            settingsDataStore.settingsFlow.collect { settings ->
+                if (!tutorialStateInitialized) {
+                    tutorialStateInitialized = true
+                    tutorialState = TutorialState.initial(
+                        alreadyCompleted = settings.tutorialCompleted || levelId != 1
+                    )
+                }
+            }
         }
     }
 
@@ -74,7 +88,7 @@ class GameViewModel @Inject constructor(
         viewModelScope.launch {
             spriteLoader.loadAll()
             metaBonus = MetaBonus.from(metaUpgradeRepository.getState())
-            engine = GameEngine(Levels.getById(levelId), cellSize, metaBonus)
+            engine = GameEngine(Levels.getById(levelId), cellSize, metaBonus, difficulty, isEndless)
             emitState()
         }
     }
@@ -161,22 +175,25 @@ class GameViewModel @Inject constructor(
                 // Process VFX events
                 particleSystem.processEvents(snapshot.events, currentCellSize)
                 particleSystem.update(deltaMs)
-
-                // Only process floating texts (damage numbers) if enabled
-                if (_currentGameplaySettings.damageNumbersEnabled) {
-                    floatingTextSystem.processEvents(snapshot.events)
-                }
+                floatingTextSystem.processEvents(snapshot.events)
                 floatingTextSystem.update(deltaMs)
-
                 processShakeAndFlash(snapshot.events, deltaMs)
 
                 emitState()
 
-                // Handle game end (save progress, award RP) -- only once
+                // Handle game end (save progress, award RP) — only once
                 val endState = snapshot.state
                 if ((endState == GameState.Won || endState == GameState.Lost) && !gameEndHandled) {
                     gameEndHandled = true
-                    if (endState == GameState.Won) {
+                    if (isEndless && endState == GameState.Lost) {
+                        endlessHighScoreDao.insert(
+                            EndlessHighScoreEntity(
+                                wavesReached = snapshot.currentWave,
+                                totalKills = snapshot.totalKills,
+                                date = System.currentTimeMillis()
+                            )
+                        )
+                    } else if (endState == GameState.Won && !isEndless) {
                         progressRepository.saveProgress(levelId, snapshot.starsEarned)
                         metaUpgradeRepository.addResearchPoints(snapshot.rpEarned)
                     }
@@ -190,18 +207,17 @@ class GameViewModel @Inject constructor(
     }
 
     private fun processShakeAndFlash(events: List<GameEvent>, deltaMs: Long) {
-        val shakeEnabled = _currentGameplaySettings.screenShakeEnabled
         for (event in events) {
             when (event) {
                 is GameEvent.LivesLost -> {
-                    if (shakeEnabled) screenShake = screenShake.trigger(12f, 300L)
+                    screenShake = screenShake.trigger(12f, 300L)
                     flashEffect = flashEffect.trigger(
                         androidx.compose.ui.graphics.Color(0xFFEF5350), 200L
                     )
                 }
                 is GameEvent.ProjectileHit -> {
                     if (event.effect is TowerEffect.AoeSplash && event.damage >= 80) {
-                        if (shakeEnabled) screenShake = screenShake.trigger(8f, 200L)
+                        screenShake = screenShake.trigger(8f, 200L)
                         flashEffect = flashEffect.trigger(
                             androidx.compose.ui.graphics.Color.White, 50L
                         )
@@ -209,23 +225,25 @@ class GameViewModel @Inject constructor(
                 }
                 is GameEvent.EnemyKilled -> {
                     if (event.enemyType.isBoss) {
-                        if (shakeEnabled) screenShake = screenShake.trigger(20f, 600L)
+                        // Boss death: big screen shake
+                        screenShake = screenShake.trigger(20f, 600L)
                         flashEffect = flashEffect.trigger(
                             androidx.compose.ui.graphics.Color.White, 150L
                         )
                     } else if (event.reward >= 50) {
-                        if (shakeEnabled) screenShake = screenShake.trigger(16f, 400L)
+                        screenShake = screenShake.trigger(16f, 400L)
                     }
                 }
                 is GameEvent.BossWarning -> {
+                    // Show boss warning banner for 3 seconds
                     bossWarningRemainingMs = 3000L
-                    if (shakeEnabled) screenShake = screenShake.trigger(6f, 500L)
+                    screenShake = screenShake.trigger(6f, 500L)
                     flashEffect = flashEffect.trigger(
                         androidx.compose.ui.graphics.Color(0xFFFF1744), 300L
                     )
                 }
                 is GameEvent.BossEnraged -> {
-                    if (shakeEnabled) screenShake = screenShake.trigger(14f, 400L)
+                    screenShake = screenShake.trigger(14f, 400L)
                     flashEffect = flashEffect.trigger(
                         androidx.compose.ui.graphics.Color(0xFFFF6F00), 200L
                     )
