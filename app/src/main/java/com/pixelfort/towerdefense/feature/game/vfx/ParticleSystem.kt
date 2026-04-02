@@ -49,13 +49,16 @@ class ParticleSystem {
 
     private fun emitDeathBurst(x: Float, y: Float, type: EnemyType) {
         val color = when (type) {
-            EnemyType.GOBLIN  -> Color(0xFF66BB6A)
-            EnemyType.ORC     -> Color(0xFF8D6E63)
-            EnemyType.DRAGON  -> Color(0xFFEF5350)
-            EnemyType.TROLL   -> Color(0xFF78909C)
-            EnemyType.SPECTER -> Color(0xFFCE93D8)
+            EnemyType.GOBLIN      -> Color(0xFF66BB6A)
+            EnemyType.ORC         -> Color(0xFF8D6E63)
+            EnemyType.DRAGON      -> Color(0xFFEF5350)
+            EnemyType.TROLL       -> Color(0xFF78909C)
+            EnemyType.SPECTER     -> Color(0xFFCE93D8)
+            EnemyType.BOSS_DRAGON -> Color(0xFFFF6F00)
         }
-        repeat(12) {
+        // Boss gets a mega death explosion
+        val particleCount = if (type.isBoss) 30 else 12
+        repeat(particleCount) {
             val angle = Random.nextFloat() * 360f
             val speed = Random.nextFloat() * 120f + 60f
             emit(x, y,

@@ -21,6 +21,7 @@ sealed interface GameUiState {
         val flashEffect: FlashEffect = FlashEffect.NONE,
         val metaBonus: MetaBonus = MetaBonus(),
         val cellSize: Float = 80f,
-        val elapsedMs: Long = 0L
+        val elapsedMs: Long = 0L,
+        val bossWarningActive: Boolean = false
     ) : GameUiState
 }

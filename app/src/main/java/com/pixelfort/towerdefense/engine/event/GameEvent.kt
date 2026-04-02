@@ -39,6 +39,9 @@ sealed interface GameEvent {
         val toX: Float, val toY: Float
     ) : GameEvent
 
+    data class BossWarning(val waveIndex: Int) : GameEvent
+    data class BossEnraged(val enemyId: Int) : GameEvent
+
     data object GameWon : GameEvent
     data object GameLost : GameEvent
 }

@@ -55,9 +55,13 @@ class GameEngine(
         eventBus.clear()
         val scaledDelta = (deltaMs * speedMultiplier).toLong()
 
-        // 1. Status effects (slow decay, poison ticks)
+        // 1. Status effects (slow decay, poison ticks, boss enrage check)
         val statusResult = statusSystem.update(enemies, scaledDelta)
         enemies = statusResult.updatedEnemies.toMutableList()
+        // Emit enrage events
+        statusResult.newlyEnragedIds.forEach { id ->
+            eventBus.emit(GameEvent.BossEnraged(id))
+        }
 
         // 2. Wave spawning
         val spawnResult = waveSpawner.update(scaledDelta, nextEnemyId)
@@ -66,6 +70,9 @@ class GameEngine(
             nextEnemyId = e.id + 1
         }
         if (spawnResult.waveSpawningComplete) waveSpawningComplete = true
+        if (spawnResult.bossWarning) {
+            eventBus.emit(GameEvent.BossWarning(playerState.currentWave))
+        }
 
         // 3. Enemy movement (uses effectiveSpeed which respects slows)
         enemies = movementSystem.moveAll(enemies, scaledDelta).toMutableList()

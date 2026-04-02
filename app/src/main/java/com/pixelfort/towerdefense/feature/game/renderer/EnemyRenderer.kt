@@ -42,11 +42,12 @@ object EnemyRenderer {
             } else {
                 // Fallback: procedural pixel art
                 when (enemy.type) {
-                    EnemyType.GOBLIN  -> drawGoblin(cx, cy, sc)
-                    EnemyType.ORC     -> drawOrc(cx, cy, sc)
-                    EnemyType.DRAGON  -> drawDragon(cx, cy, sc)
-                    EnemyType.TROLL   -> drawTroll(cx, cy, sc)
-                    EnemyType.SPECTER -> drawSpecter(cx, cy, sc)
+                    EnemyType.GOBLIN      -> drawGoblin(cx, cy, sc)
+                    EnemyType.ORC         -> drawOrc(cx, cy, sc)
+                    EnemyType.DRAGON      -> drawDragon(cx, cy, sc)
+                    EnemyType.TROLL       -> drawTroll(cx, cy, sc)
+                    EnemyType.SPECTER     -> drawSpecter(cx, cy, sc)
+                    EnemyType.BOSS_DRAGON -> drawBossDragon(cx, cy, sc)
                 }
             }
 
@@ -58,6 +59,10 @@ object EnemyRenderer {
             if (enemy.isPoisoned) {
                 drawCircle(Color(0x449CCC65), sc * 3f, Offset(cx, cy))
             }
+            // Enrage red tint overlay
+            if (enemy.isEnraged) {
+                drawCircle(Color(0x55FF1744), sc * 4f, Offset(cx, cy))
+            }
 
             // HP bar
             val barW = sc * 7f
@@ -66,11 +71,19 @@ object EnemyRenderer {
             val barY = cy - sc * 5.5f
             drawRect(Color(0xFF222222), Offset(barX, barY), Size(barW, barH))
             val hpColor = when {
-                enemy.hpPercentage > 0.6f -> Color(0xFF4CAF50)
-                enemy.hpPercentage > 0.3f -> Color(0xFFFFEB3B)
-                else                      -> Color(0xFFE53935)
+                enemy.isEnraged              -> Color(0xFFFF1744)
+                enemy.hpPercentage > 0.6f    -> Color(0xFF4CAF50)
+                enemy.hpPercentage > 0.3f    -> Color(0xFFFFEB3B)
+                else                         -> Color(0xFFE53935)
             }
             drawRect(hpColor, Offset(barX, barY), Size(barW * enemy.hpPercentage, barH))
+
+            // Armor bar segment (gray overlay on top of HP bar for bosses)
+            if (enemy.armor > 0) {
+                val armorBarH = sc * 0.6f
+                drawRect(Color(0xFF9E9E9E), Offset(barX, barY + barH), Size(barW, armorBarH))
+                drawRect(Color(0xFFBDBDBD), Offset(barX, barY + barH), Size(barW * 0.7f, armorBarH))
+            }
         }
     }
 
@@ -165,6 +178,37 @@ object EnemyRenderer {
         pix(ox, oy, 5, 3, 1, 1, Color(0xFFE040FB), sc)
         // Inner glow
         pix(ox, oy, 3, 2, 2, 4, Color(0x55EDE7F6), sc)
+    }
+
+    // ── Boss Dragon: large menacing red-black dragon ───────────
+    private fun DrawScope.drawBossDragon(cx: Float, cy: Float, sc: Float) {
+        val ox = cx - 5 * sc; val oy = cy - 5 * sc
+        // Large body
+        pix(ox, oy, 0, 5, 10, 5, Color(0xFF8B0000), sc)
+        pix(ox, oy, 1, 4, 8, 6, Color(0xFFB71C1C), sc)
+        // Wings (large)
+        pix(ox, oy, 0, 2, 3, 4, Color(0xFFD32F2F), sc)
+        pix(ox, oy, 7, 2, 3, 4, Color(0xFFD32F2F), sc)
+        // Wing tips
+        pix(ox, oy, 0, 1, 2, 2, Color(0xFFEF9A9A), sc)
+        pix(ox, oy, 8, 1, 2, 2, Color(0xFFEF9A9A), sc)
+        // Head (larger)
+        pix(ox, oy, 2, 0, 6, 4, Color(0xFFC62828), sc)
+        // Crown/horns
+        pix(ox, oy, 2, 0, 1, 1, Color(0xFFFFD600), sc)
+        pix(ox, oy, 4, 0, 2, 1, Color(0xFFFFD600), sc)
+        pix(ox, oy, 7, 0, 1, 1, Color(0xFFFFD600), sc)
+        // Eyes (glowing intense)
+        pix(ox, oy, 3, 1, 1, 1, Color(0xFFFF6F00), sc)
+        pix(ox, oy, 6, 1, 1, 1, Color(0xFFFF6F00), sc)
+        // Scales
+        pix(ox, oy, 2, 6, 1, 1, Color(0xFF880E4F), sc)
+        pix(ox, oy, 4, 6, 1, 1, Color(0xFF880E4F), sc)
+        pix(ox, oy, 6, 6, 1, 1, Color(0xFF880E4F), sc)
+        pix(ox, oy, 8, 6, 1, 1, Color(0xFF880E4F), sc)
+        // Armor plates
+        pix(ox, oy, 2, 7, 6, 2, Color(0xFF546E7A), sc)
+        pix(ox, oy, 3, 8, 4, 1, Color(0xFF78909C), sc)
     }
 
     private fun DrawScope.pix(ox: Float, oy: Float, col: Int, row: Int, w: Int, h: Int, color: Color, sc: Float) {

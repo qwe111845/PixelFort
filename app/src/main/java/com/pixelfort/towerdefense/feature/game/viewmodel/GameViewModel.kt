@@ -44,6 +44,7 @@ class GameViewModel @Inject constructor(
     private var metaBonus = MetaBonus()
     private var engine: GameEngine? = null
     private var currentCellSize: Float = 80f
+    private var bossWarningRemainingMs: Long = 0L
 
     private val _uiState = MutableStateFlow<GameUiState>(GameUiState.Loading)
     val uiState: StateFlow<GameUiState> = _uiState.asStateFlow()
@@ -189,12 +190,36 @@ class GameViewModel @Inject constructor(
                     }
                 }
                 is GameEvent.EnemyKilled -> {
-                    if (event.reward >= 50) {
+                    if (event.enemyType.isBoss) {
+                        // Boss death: big screen shake
+                        screenShake = screenShake.trigger(20f, 600L)
+                        flashEffect = flashEffect.trigger(
+                            androidx.compose.ui.graphics.Color.White, 150L
+                        )
+                    } else if (event.reward >= 50) {
                         screenShake = screenShake.trigger(16f, 400L)
                     }
                 }
+                is GameEvent.BossWarning -> {
+                    // Show boss warning banner for 3 seconds
+                    bossWarningRemainingMs = 3000L
+                    screenShake = screenShake.trigger(6f, 500L)
+                    flashEffect = flashEffect.trigger(
+                        androidx.compose.ui.graphics.Color(0xFFFF1744), 300L
+                    )
+                }
+                is GameEvent.BossEnraged -> {
+                    screenShake = screenShake.trigger(14f, 400L)
+                    flashEffect = flashEffect.trigger(
+                        androidx.compose.ui.graphics.Color(0xFFFF6F00), 200L
+                    )
+                }
                 else -> Unit
             }
+        }
+        // Update boss warning timer
+        if (bossWarningRemainingMs > 0) {
+            bossWarningRemainingMs = (bossWarningRemainingMs - deltaMs).coerceAtLeast(0L)
         }
         screenShake = screenShake.update(deltaMs)
         flashEffect = flashEffect.update(deltaMs)
@@ -212,7 +237,8 @@ class GameViewModel @Inject constructor(
             flashEffect = flashEffect,
             metaBonus = metaBonus,
             cellSize = currentCellSize,
-            elapsedMs = gameElapsedMs
+            elapsedMs = gameElapsedMs,
+            bossWarningActive = bossWarningRemainingMs > 0
         )
     }
 

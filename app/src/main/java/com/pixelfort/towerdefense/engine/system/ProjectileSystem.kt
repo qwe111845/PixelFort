@@ -48,10 +48,11 @@ class ProjectileSystem(private val cellSize: Float) {
             }
         }
 
-        // Apply direct damage
+        // Apply direct damage (with armor reduction)
         var result = enemies.map { enemy ->
-            val dmg = directDamageMap[enemy.id] ?: return@map enemy
-            enemy.copy(hp = enemy.hp - dmg)
+            val rawDmg = directDamageMap[enemy.id] ?: return@map enemy
+            val actualDmg = enemy.calculateDamage(rawDmg)
+            enemy.copy(hp = enemy.hp - actualDmg)
         }
 
         // Apply status effects
