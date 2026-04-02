@@ -3,6 +3,8 @@ package com.pixelfort.towerdefense.feature.game.viewmodel
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.pixelfort.towerdefense.core.datastore.GameplaySettingsData
+import com.pixelfort.towerdefense.core.datastore.SettingsDataStore
 import com.pixelfort.towerdefense.engine.GameEngine
 import com.pixelfort.towerdefense.engine.GameState
 import com.pixelfort.towerdefense.engine.action.GameAction
@@ -32,7 +34,8 @@ class GameViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val metaUpgradeRepository: MetaUpgradeRepository,
     private val progressRepository: ProgressRepository,
-    val spriteLoader: SpriteAssetLoader
+    val spriteLoader: SpriteAssetLoader,
+    private val settingsDataStore: SettingsDataStore
 ) : ViewModel() {
 
     private val levelId: Int = savedStateHandle.get<Int>("levelId") ?: 1
@@ -54,6 +57,15 @@ class GameViewModel @Inject constructor(
     private var selectedTowerId: Int? = null
     private var gameEndHandled = false
     private var gameElapsedMs: Long = 0L
+
+    val gameplaySettingsFlow = settingsDataStore.settingsFlow
+    private var _currentGameplaySettings = GameplaySettingsData()
+
+    init {
+        viewModelScope.launch {
+            settingsDataStore.settingsFlow.collect { _currentGameplaySettings = it }
+        }
+    }
 
     /** Called by UI once the canvas size is known (via BoxWithConstraints). */
     fun initGame(cellSize: Float) {
@@ -149,13 +161,18 @@ class GameViewModel @Inject constructor(
                 // Process VFX events
                 particleSystem.processEvents(snapshot.events, currentCellSize)
                 particleSystem.update(deltaMs)
-                floatingTextSystem.processEvents(snapshot.events)
+
+                // Only process floating texts (damage numbers) if enabled
+                if (_currentGameplaySettings.damageNumbersEnabled) {
+                    floatingTextSystem.processEvents(snapshot.events)
+                }
                 floatingTextSystem.update(deltaMs)
+
                 processShakeAndFlash(snapshot.events, deltaMs)
 
                 emitState()
 
-                // Handle game end (save progress, award RP) — only once
+                // Handle game end (save progress, award RP) -- only once
                 val endState = snapshot.state
                 if ((endState == GameState.Won || endState == GameState.Lost) && !gameEndHandled) {
                     gameEndHandled = true
@@ -173,17 +190,18 @@ class GameViewModel @Inject constructor(
     }
 
     private fun processShakeAndFlash(events: List<GameEvent>, deltaMs: Long) {
+        val shakeEnabled = _currentGameplaySettings.screenShakeEnabled
         for (event in events) {
             when (event) {
                 is GameEvent.LivesLost -> {
-                    screenShake = screenShake.trigger(12f, 300L)
+                    if (shakeEnabled) screenShake = screenShake.trigger(12f, 300L)
                     flashEffect = flashEffect.trigger(
                         androidx.compose.ui.graphics.Color(0xFFEF5350), 200L
                     )
                 }
                 is GameEvent.ProjectileHit -> {
                     if (event.effect is TowerEffect.AoeSplash && event.damage >= 80) {
-                        screenShake = screenShake.trigger(8f, 200L)
+                        if (shakeEnabled) screenShake = screenShake.trigger(8f, 200L)
                         flashEffect = flashEffect.trigger(
                             androidx.compose.ui.graphics.Color.White, 50L
                         )
@@ -191,25 +209,23 @@ class GameViewModel @Inject constructor(
                 }
                 is GameEvent.EnemyKilled -> {
                     if (event.enemyType.isBoss) {
-                        // Boss death: big screen shake
-                        screenShake = screenShake.trigger(20f, 600L)
+                        if (shakeEnabled) screenShake = screenShake.trigger(20f, 600L)
                         flashEffect = flashEffect.trigger(
                             androidx.compose.ui.graphics.Color.White, 150L
                         )
                     } else if (event.reward >= 50) {
-                        screenShake = screenShake.trigger(16f, 400L)
+                        if (shakeEnabled) screenShake = screenShake.trigger(16f, 400L)
                     }
                 }
                 is GameEvent.BossWarning -> {
-                    // Show boss warning banner for 3 seconds
                     bossWarningRemainingMs = 3000L
-                    screenShake = screenShake.trigger(6f, 500L)
+                    if (shakeEnabled) screenShake = screenShake.trigger(6f, 500L)
                     flashEffect = flashEffect.trigger(
                         androidx.compose.ui.graphics.Color(0xFFFF1744), 300L
                     )
                 }
                 is GameEvent.BossEnraged -> {
-                    screenShake = screenShake.trigger(14f, 400L)
+                    if (shakeEnabled) screenShake = screenShake.trigger(14f, 400L)
                     flashEffect = flashEffect.trigger(
                         androidx.compose.ui.graphics.Color(0xFFFF6F00), 200L
                     )
