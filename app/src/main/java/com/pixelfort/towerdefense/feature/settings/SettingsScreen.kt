@@ -131,6 +131,13 @@ fun SettingsScreen(
                 checked = gameplayState.showFpsCounter,
                 onCheckedChange = { scope.launch { viewModel.setShowFpsCounter(it) } }
             )
+            Spacer(Modifier.height(8.dp))
+
+            SettingsToggle(
+                label = "Random Wave Events",
+                checked = gameplayState.randomEventsEnabled,
+                onCheckedChange = { scope.launch { viewModel.setRandomEventsEnabled(it) } }
+            )
             Spacer(Modifier.height(16.dp))
 
             Button(

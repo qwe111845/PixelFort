@@ -52,6 +52,7 @@ import com.pixelfort.towerdefense.core.util.SpriteAssetLoader
 import com.pixelfort.towerdefense.engine.GameState
 import com.pixelfort.towerdefense.engine.level.Levels
 import com.pixelfort.towerdefense.engine.model.ActiveCombo
+import com.pixelfort.towerdefense.engine.model.ActiveWaveEvent
 import com.pixelfort.towerdefense.engine.model.MetaBonus
 import com.pixelfort.towerdefense.engine.model.Tower
 import com.pixelfort.towerdefense.engine.model.TowerType
@@ -292,6 +293,29 @@ fun GameScreen(
                         .background(state.flashEffect.color.copy(alpha = state.flashEffect.alpha))
                 )
             }
+
+            // SPEC-032: Screen tint overlay for active wave events
+            if (snapshot.activeWaveEvents.isNotEmpty()) {
+                for (event in snapshot.activeWaveEvents) {
+                    val tintColor = Color(event.type.tintColor)
+                    if (tintColor.alpha > 0f) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(tintColor)
+                        )
+                    }
+                }
+            }
+
+            // SPEC-032: Wave event banner
+            EventBanner(
+                event = state.waveEventBanner,
+                visible = state.waveEventBannerRemainingMs > 0L,
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = statusBarPadding + topBarHeightDp + 8.dp)
+            )
 
             // FPS counter overlay
             if (gameplaySettings.showFpsCounter && fpsText.isNotEmpty()) {

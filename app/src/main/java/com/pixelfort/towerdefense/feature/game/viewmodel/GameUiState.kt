@@ -1,6 +1,7 @@
 package com.pixelfort.towerdefense.feature.game.viewmodel
 
 import com.pixelfort.towerdefense.engine.GameSnapshot
+import com.pixelfort.towerdefense.engine.model.ActiveWaveEvent
 import com.pixelfort.towerdefense.engine.model.MetaBonus
 import com.pixelfort.towerdefense.engine.model.TowerType
 import com.pixelfort.towerdefense.feature.game.tutorial.TutorialState
@@ -34,6 +35,10 @@ sealed interface GameUiState {
         val ambientParticles: List<AmbientParticle> = emptyList(),
         val deathFlashes: List<DeathFlash> = emptyList(),
         val sellEffects: List<SellEffect> = emptyList(),
-        val sellConfirmTowerId: Int? = null
+        val sellConfirmTowerId: Int? = null,
+        /** SPEC-032: Active wave event shown in banner */
+        val waveEventBanner: ActiveWaveEvent? = null,
+        /** SPEC-032: Banner remaining display time in ms */
+        val waveEventBannerRemainingMs: Long = 0L
     ) : GameUiState
 }

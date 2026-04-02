@@ -36,7 +36,17 @@ class TowerTargetingSystem(private val cellSize: Float) {
         }
     }
 
-    fun update(towers: List<Tower>, enemies: List<Enemy>, deltaMs: Long): Result {
+    /**
+     * @param rangeMult    SPEC-032 wave-event range multiplier (default 1.0)
+     * @param fireRateMult SPEC-032 wave-event fire-rate multiplier (< 1 = faster, default 1.0)
+     */
+    fun update(
+        towers: List<Tower>,
+        enemies: List<Enemy>,
+        deltaMs: Long,
+        rangeMult: Float = 1f,
+        fireRateMult: Float = 1f
+    ): Result {
         val newProjectiles = mutableListOf<Projectile>()
         val deltaSec = deltaMs / 1000f
         val maxAngleDelta = ROTATION_SPEED * deltaSec
@@ -46,7 +56,7 @@ class TowerTargetingSystem(private val cellSize: Float) {
             var towerReady = tower.copy(cooldownRemainingMs = reducedCooldown)
 
             // Find target for rotation (even if on cooldown)
-            val target = selectTarget(towerReady, enemies)
+            val target = selectTarget(towerReady, enemies, rangeMult)
 
             // Update facing angle toward target (or keep last direction)
             if (target != null) {
@@ -75,17 +85,18 @@ class TowerTargetingSystem(private val cellSize: Float) {
                     effect = stats.effect
                 )
             )
-            towerReady.copy(cooldownRemainingMs = stats.fireRateMs)
+            // SPEC-032: apply fire rate multiplier from wave events
+            towerReady.copy(cooldownRemainingMs = (stats.fireRateMs * fireRateMult).toLong())
         }
 
         return Result(updatedTowers, newProjectiles)
     }
 
-    private fun selectTarget(tower: Tower, enemies: List<Enemy>): Enemy? {
+    private fun selectTarget(tower: Tower, enemies: List<Enemy>, rangeMult: Float = 1f): Enemy? {
         val stats = tower.stats
         val towerCx = tower.gridCol * cellSize + cellSize / 2f
         val towerCy = tower.gridRow * cellSize + cellSize / 2f
-        val rangePx = stats.range * cellSize
+        val rangePx = stats.range * cellSize * rangeMult
 
         val inRange = enemies.filter { e ->
             if (e.isDead || e.hasReachedEnd) return@filter false

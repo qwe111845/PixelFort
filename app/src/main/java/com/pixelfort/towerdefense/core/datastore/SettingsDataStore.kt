@@ -18,7 +18,9 @@ data class GameplaySettingsData(
     val screenShakeEnabled: Boolean = true,
     val damageNumbersEnabled: Boolean = true,
     val showFpsCounter: Boolean = false,
-    val tutorialCompleted: Boolean = false
+    val tutorialCompleted: Boolean = false,
+    /** SPEC-032: Whether random wave events are enabled */
+    val randomEventsEnabled: Boolean = true
 )
 
 @Singleton
@@ -29,13 +31,15 @@ class SettingsDataStore @Inject constructor(
     private val damageNumbersKey = booleanPreferencesKey("damage_numbers_enabled")
     private val showFpsKey = booleanPreferencesKey("show_fps_counter")
     private val tutorialCompletedKey = booleanPreferencesKey("tutorial_completed")
+    private val randomEventsKey = booleanPreferencesKey("random_events_enabled")
 
     val settingsFlow: Flow<GameplaySettingsData> = context.settingsDataStore.data.map { prefs ->
         GameplaySettingsData(
             screenShakeEnabled = prefs[screenShakeKey] ?: true,
             damageNumbersEnabled = prefs[damageNumbersKey] ?: true,
             showFpsCounter = prefs[showFpsKey] ?: false,
-            tutorialCompleted = prefs[tutorialCompletedKey] ?: false
+            tutorialCompleted = prefs[tutorialCompletedKey] ?: false,
+            randomEventsEnabled = prefs[randomEventsKey] ?: true
         )
     }
 
@@ -53,5 +57,9 @@ class SettingsDataStore @Inject constructor(
 
     suspend fun setTutorialCompleted(completed: Boolean) {
         context.settingsDataStore.edit { it[tutorialCompletedKey] = completed }
+    }
+
+    suspend fun setRandomEventsEnabled(enabled: Boolean) {
+        context.settingsDataStore.edit { it[randomEventsKey] = enabled }
     }
 }

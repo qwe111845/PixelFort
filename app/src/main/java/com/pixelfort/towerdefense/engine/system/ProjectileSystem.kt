@@ -28,13 +28,17 @@ class ProjectileSystem(private val cellSize: Float) {
 
     private var nextProjectileId = 10_000
 
+    /**
+     * @param projectileSpeedMult SPEC-032 wave-event projectile speed multiplier (default 1.0)
+     */
     fun update(
         projectiles: List<Projectile>,
         enemies: List<Enemy>,
         deltaMs: Long,
         statusEffectSystem: StatusEffectSystem,
         activeCombos: List<ActiveCombo> = emptyList(),
-        towers: List<Tower> = emptyList()
+        towers: List<Tower> = emptyList(),
+        projectileSpeedMult: Float = 1f
     ): Result {
         val remaining = mutableListOf<Projectile>()
         val directDamageMap = mutableMapOf<Int, Int>()        // id -> dmg
@@ -55,7 +59,7 @@ class ProjectileSystem(private val cellSize: Float) {
                 hitEvents.add(HitEvent(target.pixelX, target.pixelY, comboProj.effect, comboProj.damage))
                 applyHit(comboProj, target, enemies, directDamageMap, effectsToApply, chainProjectiles, activeCombos, towerById)
             } else {
-                remaining.add(moveToward(proj, target.pixelX, target.pixelY, deltaMs))
+                remaining.add(moveToward(proj, target.pixelX, target.pixelY, deltaMs, projectileSpeedMult))
             }
         }
 
@@ -297,11 +301,14 @@ class ProjectileSystem(private val cellSize: Float) {
         else -> null
     }
 
-    private fun moveToward(proj: Projectile, targetX: Float, targetY: Float, deltaMs: Long): Projectile {
+    private fun moveToward(
+        proj: Projectile, targetX: Float, targetY: Float, deltaMs: Long,
+        speedMult: Float = 1f
+    ): Projectile {
         val dx = targetX - proj.pixelX
         val dy = targetY - proj.pixelY
         val dist = sqrt(dx * dx + dy * dy).coerceAtLeast(0.001f)
-        val move = (proj.speed * cellSize * deltaMs / 1000f).coerceAtMost(dist)
+        val move = (proj.speed * speedMult * cellSize * deltaMs / 1000f).coerceAtMost(dist)
         return proj.copy(
             pixelX = proj.pixelX + dx / dist * move,
             pixelY = proj.pixelY + dy / dist * move
