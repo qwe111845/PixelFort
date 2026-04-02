@@ -35,6 +35,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.pixelfort.towerdefense.engine.GameState
@@ -69,10 +73,14 @@ fun GameScreen(
         }
     }
 
+    val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    val navBarPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFF0A0A1A))
+            .padding(top = statusBarPadding, bottom = navBarPadding)
     ) {
         // Calculate cell size so map fits on screen with HUD space reserved
         val hudHeightDp = 160.dp
