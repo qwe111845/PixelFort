@@ -47,7 +47,11 @@ object TowerRenderer {
     ) {
         for (tower in towers) {
             val cx = tower.gridCol * cellSize + cellSize / 2f
-            val cy = tower.gridRow * cellSize + cellSize / 2f
+            // Idle bobbing: 2-3 pixel vertical oscillation at ~0.5 Hz
+            val bobOffset = (2.5f * kotlin.math.sin(
+                elapsedMs * 2.0 * Math.PI / 2000.0 + tower.id * 0.7
+            )).toFloat()
+            val cy = tower.gridRow * cellSize + cellSize / 2f + bobOffset
             val sc = cellSize / 10f  // 1 pixel unit = sc dp
 
             // Range ring when selected

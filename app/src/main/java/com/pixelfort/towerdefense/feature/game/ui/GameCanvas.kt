@@ -23,10 +23,14 @@ import com.pixelfort.towerdefense.feature.game.renderer.MapRenderer.drawMap
 import com.pixelfort.towerdefense.feature.game.renderer.ProjectileRenderer.drawProjectiles
 import com.pixelfort.towerdefense.feature.game.renderer.TowerRenderer.drawGhostTower
 import com.pixelfort.towerdefense.feature.game.renderer.TowerRenderer.drawTowers
+import com.pixelfort.towerdefense.feature.game.renderer.VfxRenderer.drawAmbientParticles
 import com.pixelfort.towerdefense.feature.game.renderer.VfxRenderer.drawParticles
+import com.pixelfort.towerdefense.feature.game.vfx.AmbientParticle
+import com.pixelfort.towerdefense.feature.game.vfx.DeathFlash
 import com.pixelfort.towerdefense.feature.game.vfx.FloatingText
 import com.pixelfort.towerdefense.feature.game.vfx.Particle
 import com.pixelfort.towerdefense.feature.game.vfx.ScreenShake
+import com.pixelfort.towerdefense.feature.game.vfx.TrailSystem
 
 @Composable
 fun GameCanvas(
@@ -36,6 +40,9 @@ fun GameCanvas(
     particles: List<Particle>,
     floatingTexts: List<FloatingText> = emptyList(),
     screenShake: ScreenShake = ScreenShake.IDLE,
+    trailSystem: TrailSystem? = null,
+    ambientParticles: List<AmbientParticle> = emptyList(),
+    deathFlashes: List<DeathFlash> = emptyList(),
     selectedTowerId: Int?,
     selectedTowerType: TowerType? = null,
     spriteLoader: SpriteAssetLoader? = null,
@@ -78,9 +85,10 @@ fun GameCanvas(
         val shakeY = screenShake.offsetY
         translate(shakeX, shakeY) {
             drawMap(map, cellSize)
+            drawAmbientParticles(ambientParticles)
             drawTowers(snapshot.towers, cellSize, selectedTowerId, spriteLoader, elapsedMs)
-            drawEnemies(snapshot.enemies, cellSize, spriteLoader, elapsedMs)
-            drawProjectiles(snapshot.projectiles)
+            drawEnemies(snapshot.enemies, cellSize, spriteLoader, elapsedMs, deathFlashes)
+            drawProjectiles(snapshot.projectiles, trailSystem)
             drawParticles(particles)
 
             // Ghost tower preview when a tower type is selected

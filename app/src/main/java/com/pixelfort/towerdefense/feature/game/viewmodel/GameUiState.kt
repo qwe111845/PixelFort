@@ -4,10 +4,13 @@ import com.pixelfort.towerdefense.engine.GameSnapshot
 import com.pixelfort.towerdefense.engine.model.MetaBonus
 import com.pixelfort.towerdefense.engine.model.TowerType
 import com.pixelfort.towerdefense.feature.game.tutorial.TutorialState
+import com.pixelfort.towerdefense.feature.game.vfx.AmbientParticle
+import com.pixelfort.towerdefense.feature.game.vfx.DeathFlash
 import com.pixelfort.towerdefense.feature.game.vfx.FlashEffect
 import com.pixelfort.towerdefense.feature.game.vfx.FloatingText
 import com.pixelfort.towerdefense.feature.game.vfx.Particle
 import com.pixelfort.towerdefense.feature.game.vfx.ScreenShake
+import com.pixelfort.towerdefense.feature.game.vfx.TrailSystem
 
 sealed interface GameUiState {
     data object Loading : GameUiState
@@ -24,6 +27,9 @@ sealed interface GameUiState {
         val cellSize: Float = 80f,
         val elapsedMs: Long = 0L,
         val bossWarningActive: Boolean = false,
-        val tutorialState: TutorialState = TutorialState(isActive = false, isCompleted = true)
+        val tutorialState: TutorialState = TutorialState(isActive = false, isCompleted = true),
+        val trailSystem: TrailSystem? = null,
+        val ambientParticles: List<AmbientParticle> = emptyList(),
+        val deathFlashes: List<DeathFlash> = emptyList()
     ) : GameUiState
 }

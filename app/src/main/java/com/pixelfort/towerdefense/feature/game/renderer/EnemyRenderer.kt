@@ -10,6 +10,7 @@ import androidx.compose.ui.unit.IntSize
 import com.pixelfort.towerdefense.core.util.SpriteAssetLoader
 import com.pixelfort.towerdefense.engine.model.Enemy
 import com.pixelfort.towerdefense.engine.model.EnemyType
+import com.pixelfort.towerdefense.feature.game.vfx.DeathFlash
 
 object EnemyRenderer {
 
@@ -17,8 +18,20 @@ object EnemyRenderer {
         enemies: List<Enemy>,
         cellSize: Float,
         spriteLoader: SpriteAssetLoader? = null,
-        elapsedMs: Long = 0L
+        elapsedMs: Long = 0L,
+        deathFlashes: List<DeathFlash> = emptyList()
     ) {
+        // Draw death flash overlays (white flash for 60ms before death burst)
+        for (flash in deathFlashes) {
+            val flashRadius = cellSize * flash.size * 0.5f
+            val flashAlpha = (flash.remainingMs.toFloat() / flash.maxMs).coerceIn(0f, 1f) * 0.85f
+            drawCircle(
+                Color.White.copy(alpha = flashAlpha),
+                flashRadius,
+                Offset(flash.x, flash.y)
+            )
+        }
+
         for (enemy in enemies) {
             val sc = cellSize / 10f * enemy.type.size
             val cx = enemy.pixelX

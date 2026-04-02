@@ -15,10 +15,13 @@ import com.pixelfort.towerdefense.engine.model.TowerType
 import com.pixelfort.towerdefense.engine.event.GameEvent
 import com.pixelfort.towerdefense.engine.model.TowerEffect
 import com.pixelfort.towerdefense.feature.game.tutorial.TutorialState
+import com.pixelfort.towerdefense.feature.game.vfx.AmbientSystem
+import com.pixelfort.towerdefense.feature.game.vfx.DeathFlash
 import com.pixelfort.towerdefense.feature.game.vfx.FlashEffect
 import com.pixelfort.towerdefense.feature.game.vfx.FloatingTextSystem
 import com.pixelfort.towerdefense.feature.game.vfx.ParticleSystem
 import com.pixelfort.towerdefense.feature.game.vfx.ScreenShake
+import com.pixelfort.towerdefense.feature.game.vfx.TrailSystem
 import com.pixelfort.towerdefense.core.util.SpriteAssetLoader
 import com.pixelfort.towerdefense.core.database.dao.EndlessHighScoreDao
 import com.pixelfort.towerdefense.core.database.entity.EndlessHighScoreEntity
@@ -51,6 +54,9 @@ class GameViewModel @Inject constructor(
 
     private val particleSystem = ParticleSystem()
     private val floatingTextSystem = FloatingTextSystem()
+    private val trailSystem = TrailSystem()
+    private var ambientSystem: AmbientSystem? = null
+    private val deathFlashes = mutableListOf<DeathFlash>()
     private var screenShake = ScreenShake.IDLE
     private var flashEffect = FlashEffect.NONE
     private var metaBonus = MetaBonus()
@@ -93,7 +99,14 @@ class GameViewModel @Inject constructor(
         viewModelScope.launch {
             spriteLoader.loadAll()
             metaBonus = MetaBonus.from(metaUpgradeRepository.getState())
-            engine = GameEngine(Levels.getById(levelId), cellSize, metaBonus, difficulty, isEndless)
+            val level = Levels.getById(levelId)
+            engine = GameEngine(level, cellSize, metaBonus, difficulty, isEndless)
+            // Initialize ambient particle system sized to the game map
+            ambientSystem = AmbientSystem(
+                canvasWidth = level.map.cols * cellSize,
+                canvasHeight = level.map.rows * cellSize,
+                levelId = levelId
+            )
             emitState()
         }
     }
@@ -194,6 +207,30 @@ class GameViewModel @Inject constructor(
                 // Process VFX events
                 particleSystem.processEvents(snapshot.events, currentCellSize)
                 particleSystem.update(deltaMs)
+
+                // Update projectile trails
+                trailSystem.update(snapshot.projectiles)
+
+                // Update ambient particles
+                ambientSystem?.update(deltaMs)
+
+                // Process death flashes from EnemyKilled events
+                for (event in snapshot.events) {
+                    if (event is GameEvent.EnemyKilled) {
+                        deathFlashes.add(
+                            DeathFlash(
+                                x = event.pixelX,
+                                y = event.pixelY,
+                                size = event.enemyType.size,
+                                remainingMs = DeathFlash.FLASH_DURATION_MS
+                            )
+                        )
+                    }
+                }
+                // Update and prune death flashes
+                val updatedFlashes = deathFlashes.map { it.update(deltaMs) }.filter { !it.isDead }
+                deathFlashes.clear()
+                deathFlashes.addAll(updatedFlashes)
 
                 // Only process floating texts (damage numbers) if enabled
                 if (_currentGameplaySettings.damageNumbersEnabled) {
@@ -296,7 +333,10 @@ class GameViewModel @Inject constructor(
             cellSize = currentCellSize,
             elapsedMs = gameElapsedMs,
             bossWarningActive = bossWarningRemainingMs > 0,
-            tutorialState = tutorialState
+            tutorialState = tutorialState,
+            trailSystem = trailSystem,
+            ambientParticles = ambientSystem?.activeParticles ?: emptyList(),
+            deathFlashes = deathFlashes.toList()
         )
     }
 
