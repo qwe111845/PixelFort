@@ -4,6 +4,8 @@ import com.pixelfort.towerdefense.engine.model.Enemy
 import com.pixelfort.towerdefense.engine.model.Projectile
 import com.pixelfort.towerdefense.engine.model.Tower
 import com.pixelfort.towerdefense.engine.model.TowerType
+import kotlin.math.abs
+import kotlin.math.atan2
 import kotlin.math.max
 import kotlin.math.sqrt
 
@@ -16,16 +18,49 @@ class TowerTargetingSystem(private val cellSize: Float) {
 
     private var nextProjectileId = 1
 
+    companion object {
+        /** Turret rotation speed in radians per second. */
+        const val ROTATION_SPEED = 10f
+
+        /**
+         * Smoothly interpolate an angle toward a target, wrapping around -PI..PI.
+         * [maxDelta] is the maximum change in radians this tick.
+         */
+        fun lerpAngle(current: Float, target: Float, maxDelta: Float): Float {
+            var diff = target - current
+            // Normalize to -PI..PI
+            while (diff > Math.PI) diff -= (2 * Math.PI).toFloat()
+            while (diff < -Math.PI) diff += (2 * Math.PI).toFloat()
+            return if (abs(diff) <= maxDelta) target
+            else current + if (diff > 0) maxDelta else -maxDelta
+        }
+    }
+
     fun update(towers: List<Tower>, enemies: List<Enemy>, deltaMs: Long): Result {
         val newProjectiles = mutableListOf<Projectile>()
+        val deltaSec = deltaMs / 1000f
+        val maxAngleDelta = ROTATION_SPEED * deltaSec
 
         val updatedTowers = towers.map { tower ->
             val reducedCooldown = max(0L, tower.cooldownRemainingMs - deltaMs)
-            val towerReady = tower.copy(cooldownRemainingMs = reducedCooldown)
+            var towerReady = tower.copy(cooldownRemainingMs = reducedCooldown)
+
+            // Find target for rotation (even if on cooldown)
+            val target = selectTarget(towerReady, enemies)
+
+            // Update facing angle toward target (or keep last direction)
+            if (target != null) {
+                val towerCx = tower.gridCol * cellSize + cellSize / 2f
+                val towerCy = tower.gridRow * cellSize + cellSize / 2f
+                val desiredAngle = atan2(target.pixelY - towerCy, target.pixelX - towerCx)
+                val newAngle = lerpAngle(towerReady.facingAngle, desiredAngle, maxAngleDelta)
+                towerReady = towerReady.copy(facingAngle = newAngle)
+            }
+            // When no target: tower keeps its current facingAngle (last direction)
 
             if (reducedCooldown > 0) return@map towerReady
 
-            val target = selectTarget(towerReady, enemies) ?: return@map towerReady
+            if (target == null) return@map towerReady
 
             val stats = towerReady.stats
             newProjectiles.add(

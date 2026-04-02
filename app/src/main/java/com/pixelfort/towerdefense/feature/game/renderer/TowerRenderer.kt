@@ -6,6 +6,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import com.pixelfort.towerdefense.core.util.SpriteAssetLoader
@@ -63,6 +65,9 @@ object TowerRenderer {
                 )
             }
 
+            // Convert facing angle from radians to degrees for Canvas rotation
+            val rotationDegrees = Math.toDegrees(tower.facingAngle.toDouble()).toFloat()
+
             // Try PNG sprite first, fall back to procedural
             val sprite = spriteLoader?.getTowerSprite(tower.type, tower.level)
             if (sprite != null) {
@@ -77,31 +82,35 @@ object TowerRenderer {
 
                 val finalScale = breathScale * attackScale
                 val spriteSize = (cellSize * 0.85f * finalScale).toInt()
-                drawImage(
-                    image = sprite,
-                    srcOffset = IntOffset.Zero,
-                    srcSize = IntSize(sprite.width, sprite.height),
-                    dstOffset = IntOffset(
-                        (cx - spriteSize / 2f).toInt(),
-                        (cy - spriteSize / 2f).toInt()
-                    ),
-                    dstSize = IntSize(spriteSize, spriteSize)
-                )
+                rotate(degrees = rotationDegrees, pivot = Offset(cx, cy)) {
+                    drawImage(
+                        image = sprite,
+                        srcOffset = IntOffset.Zero,
+                        srcSize = IntSize(sprite.width, sprite.height),
+                        dstOffset = IntOffset(
+                            (cx - spriteSize / 2f).toInt(),
+                            (cy - spriteSize / 2f).toInt()
+                        ),
+                        dstSize = IntSize(spriteSize, spriteSize)
+                    )
+                }
             } else {
-                // Fallback: procedural pixel art
-                when (tower.type) {
-                    TowerType.ARCHER    -> drawArcher(cx, cy, sc, tower.level)
-                    TowerType.CANNON    -> drawCannon(cx, cy, sc, tower.level)
-                    TowerType.MAGIC     -> drawMagic(cx, cy, sc, tower.level)
-                    TowerType.SNIPER    -> drawSniper(cx, cy, sc, tower.level)
-                    TowerType.FROST     -> drawFrost(cx, cy, sc, tower.level)
-                    TowerType.LIGHTNING -> drawLightning(cx, cy, sc, tower.level)
-                    TowerType.POISON    -> drawPoison(cx, cy, sc, tower.level)
-                    TowerType.BOMB      -> drawBomb(cx, cy, sc, tower.level)
+                // Fallback: procedural pixel art with rotation
+                rotate(degrees = rotationDegrees, pivot = Offset(cx, cy)) {
+                    when (tower.type) {
+                        TowerType.ARCHER    -> drawArcher(cx, cy, sc, tower.level)
+                        TowerType.CANNON    -> drawCannon(cx, cy, sc, tower.level)
+                        TowerType.MAGIC     -> drawMagic(cx, cy, sc, tower.level)
+                        TowerType.SNIPER    -> drawSniper(cx, cy, sc, tower.level)
+                        TowerType.FROST     -> drawFrost(cx, cy, sc, tower.level)
+                        TowerType.LIGHTNING -> drawLightning(cx, cy, sc, tower.level)
+                        TowerType.POISON    -> drawPoison(cx, cy, sc, tower.level)
+                        TowerType.BOMB      -> drawBomb(cx, cy, sc, tower.level)
+                    }
                 }
             }
 
-            // Level pips below
+            // Level pips below (drawn without rotation so they stay readable)
             val pipColor = Color.White
             val pipSize = sc * 1.5f
             val totalW = tower.level * (pipSize + sc * 0.5f) - sc * 0.5f
@@ -113,6 +122,76 @@ object TowerRenderer {
                     size = Size(pipSize, pipSize)
                 )
             }
+        }
+    }
+
+    /**
+     * Draw a semi-transparent ghost tower at the given grid position,
+     * optionally with a range circle. If [isValid] is false the ghost tints red.
+     */
+    fun DrawScope.drawGhostTower(
+        towerType: TowerType,
+        gridRow: Int,
+        gridCol: Int,
+        cellSize: Float,
+        isValid: Boolean,
+        spriteLoader: SpriteAssetLoader? = null
+    ) {
+        val cx = gridCol * cellSize + cellSize / 2f
+        val cy = gridRow * cellSize + cellSize / 2f
+        val sc = cellSize / 10f
+        val stats = towerType.statsForLevel(1)
+        val ghostAlpha = 0.4f
+        val rangeColor = if (isValid) Color.White.copy(alpha = 0.15f) else Color.Red.copy(alpha = 0.15f)
+        val rangeBorderColor = if (isValid) Color.White.copy(alpha = 0.3f) else Color.Red.copy(alpha = 0.5f)
+
+        // Range circle
+        drawCircle(color = rangeColor, radius = stats.range * cellSize, center = Offset(cx, cy))
+        drawCircle(
+            color = rangeBorderColor,
+            radius = stats.range * cellSize,
+            center = Offset(cx, cy),
+            style = Stroke(sc * 0.6f)
+        )
+
+        // Draw the tower sprite/procedural art with reduced alpha
+        val sprite = spriteLoader?.getTowerSprite(towerType, 1)
+        if (sprite != null) {
+            val spriteSize = (cellSize * 0.85f).toInt()
+            withTransform({
+                // No built-in alpha transform for drawImage, so we use a color filter approach
+            }) {
+                drawImage(
+                    image = sprite,
+                    srcOffset = IntOffset.Zero,
+                    srcSize = IntSize(sprite.width, sprite.height),
+                    dstOffset = IntOffset(
+                        (cx - spriteSize / 2f).toInt(),
+                        (cy - spriteSize / 2f).toInt()
+                    ),
+                    dstSize = IntSize(spriteSize, spriteSize),
+                    alpha = ghostAlpha,
+                    colorFilter = if (!isValid) androidx.compose.ui.graphics.ColorFilter.tint(
+                        Color.Red.copy(alpha = 0.5f),
+                        blendMode = androidx.compose.ui.graphics.BlendMode.SrcAtop
+                    ) else null
+                )
+            }
+        } else {
+            // Procedural fallback: draw a filled semi-transparent circle as placeholder
+            val towerColor = when (towerType) {
+                TowerType.ARCHER -> C_ARCHER
+                TowerType.CANNON -> C_CANNON
+                TowerType.MAGIC -> C_MAGIC
+                TowerType.SNIPER -> C_SNIPER
+                TowerType.FROST -> C_FROST
+                TowerType.LIGHTNING -> C_LIGHT
+                TowerType.POISON -> C_POISON
+                TowerType.BOMB -> C_BOMB
+            }
+            val ghostColor = if (isValid) towerColor.copy(alpha = ghostAlpha)
+            else Color.Red.copy(alpha = ghostAlpha)
+            drawCircle(color = ghostColor, radius = cellSize * 0.35f, center = Offset(cx, cy))
         }
     }
 
