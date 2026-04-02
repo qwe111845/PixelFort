@@ -15,6 +15,7 @@ import com.pixelfort.towerdefense.feature.game.vfx.FlashEffect
 import com.pixelfort.towerdefense.feature.game.vfx.FloatingTextSystem
 import com.pixelfort.towerdefense.feature.game.vfx.ParticleSystem
 import com.pixelfort.towerdefense.feature.game.vfx.ScreenShake
+import com.pixelfort.towerdefense.core.util.SpriteAssetLoader
 import com.pixelfort.towerdefense.feature.metaupgrade.domain.MetaUpgradeRepository
 import com.pixelfort.towerdefense.feature.progress.domain.ProgressRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -30,7 +31,8 @@ import javax.inject.Inject
 class GameViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val metaUpgradeRepository: MetaUpgradeRepository,
-    private val progressRepository: ProgressRepository
+    private val progressRepository: ProgressRepository,
+    val spriteLoader: SpriteAssetLoader
 ) : ViewModel() {
 
     private val levelId: Int = savedStateHandle.get<Int>("levelId") ?: 1
@@ -50,12 +52,14 @@ class GameViewModel @Inject constructor(
     private var selectedTowerType: TowerType? = null
     private var selectedTowerId: Int? = null
     private var gameEndHandled = false
+    private var gameElapsedMs: Long = 0L
 
     /** Called by UI once the canvas size is known (via BoxWithConstraints). */
     fun initGame(cellSize: Float) {
         if (engine != null) return  // already initialized
         currentCellSize = cellSize
         viewModelScope.launch {
+            spriteLoader.loadAll()
             metaBonus = MetaBonus.from(metaUpgradeRepository.getState())
             engine = GameEngine(Levels.getById(levelId), cellSize, metaBonus)
             emitState()
@@ -137,6 +141,7 @@ class GameViewModel @Inject constructor(
 
                 val eng = engine ?: break
                 eng.update(deltaMs)
+                gameElapsedMs += deltaMs
 
                 val snapshot = eng.snapshot()
 
@@ -206,7 +211,8 @@ class GameViewModel @Inject constructor(
             screenShake = screenShake,
             flashEffect = flashEffect,
             metaBonus = metaBonus,
-            cellSize = currentCellSize
+            cellSize = currentCellSize,
+            elapsedMs = gameElapsedMs
         )
     }
 

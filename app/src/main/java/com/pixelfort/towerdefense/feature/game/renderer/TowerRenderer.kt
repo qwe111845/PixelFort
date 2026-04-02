@@ -6,6 +6,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
+import com.pixelfort.towerdefense.core.util.SpriteAssetLoader
 import com.pixelfort.towerdefense.engine.model.Tower
 import com.pixelfort.towerdefense.engine.model.TowerType
 import com.pixelfort.towerdefense.feature.game.renderer.PixelDraw.pixel
@@ -33,7 +36,13 @@ object TowerRenderer {
     private val C_BOMB_L   = Color(0xFFFF7043)
     private val C_SELECT   = Color(0xFFFFFF00)
 
-    fun DrawScope.drawTowers(towers: List<Tower>, cellSize: Float, selectedTowerId: Int?) {
+    fun DrawScope.drawTowers(
+        towers: List<Tower>,
+        cellSize: Float,
+        selectedTowerId: Int?,
+        spriteLoader: SpriteAssetLoader? = null,
+        elapsedMs: Long = 0L
+    ) {
         for (tower in towers) {
             val cx = tower.gridCol * cellSize + cellSize / 2f
             val cy = tower.gridRow * cellSize + cellSize / 2f
@@ -54,16 +63,42 @@ object TowerRenderer {
                 )
             }
 
-            // Draw pixelated tower body
-            when (tower.type) {
-                TowerType.ARCHER    -> drawArcher(cx, cy, sc, tower.level)
-                TowerType.CANNON    -> drawCannon(cx, cy, sc, tower.level)
-                TowerType.MAGIC     -> drawMagic(cx, cy, sc, tower.level)
-                TowerType.SNIPER    -> drawSniper(cx, cy, sc, tower.level)
-                TowerType.FROST     -> drawFrost(cx, cy, sc, tower.level)
-                TowerType.LIGHTNING -> drawLightning(cx, cy, sc, tower.level)
-                TowerType.POISON    -> drawPoison(cx, cy, sc, tower.level)
-                TowerType.BOMB      -> drawBomb(cx, cy, sc, tower.level)
+            // Try PNG sprite first, fall back to procedural
+            val sprite = spriteLoader?.getTowerSprite(tower.type, tower.level)
+            if (sprite != null) {
+                // Idle breathing: subtle scale oscillation
+                val breathScale = 1f + 0.02f * kotlin.math.sin(elapsedMs * Math.PI / 1000.0).toFloat()
+
+                // Attack pulse: brief scale spike on fire (check cooldown)
+                val fireRateMs = tower.stats.fireRateMs.toLong()
+                val cooldownPct = tower.cooldownRemainingMs.toFloat() / fireRateMs.coerceAtLeast(1)
+                val justFired = cooldownPct > 0.9f
+                val attackScale = if (justFired) 1.12f else 1f
+
+                val finalScale = breathScale * attackScale
+                val spriteSize = (cellSize * 0.85f * finalScale).toInt()
+                drawImage(
+                    image = sprite,
+                    srcOffset = IntOffset.Zero,
+                    srcSize = IntSize(sprite.width, sprite.height),
+                    dstOffset = IntOffset(
+                        (cx - spriteSize / 2f).toInt(),
+                        (cy - spriteSize / 2f).toInt()
+                    ),
+                    dstSize = IntSize(spriteSize, spriteSize)
+                )
+            } else {
+                // Fallback: procedural pixel art
+                when (tower.type) {
+                    TowerType.ARCHER    -> drawArcher(cx, cy, sc, tower.level)
+                    TowerType.CANNON    -> drawCannon(cx, cy, sc, tower.level)
+                    TowerType.MAGIC     -> drawMagic(cx, cy, sc, tower.level)
+                    TowerType.SNIPER    -> drawSniper(cx, cy, sc, tower.level)
+                    TowerType.FROST     -> drawFrost(cx, cy, sc, tower.level)
+                    TowerType.LIGHTNING -> drawLightning(cx, cy, sc, tower.level)
+                    TowerType.POISON    -> drawPoison(cx, cy, sc, tower.level)
+                    TowerType.BOMB      -> drawBomb(cx, cy, sc, tower.level)
+                }
             }
 
             // Level pips below

@@ -7,6 +7,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.rememberTextMeasurer
+import com.pixelfort.towerdefense.core.util.SpriteAssetLoader
 import com.pixelfort.towerdefense.engine.GameSnapshot
 import com.pixelfort.towerdefense.engine.model.GameMap
 import com.pixelfort.towerdefense.feature.game.renderer.EnemyRenderer.drawEnemies
@@ -28,6 +29,8 @@ fun GameCanvas(
     floatingTexts: List<FloatingText> = emptyList(),
     screenShake: ScreenShake = ScreenShake.IDLE,
     selectedTowerId: Int?,
+    spriteLoader: SpriteAssetLoader? = null,
+    elapsedMs: Long = 0L,
     onCellTapped: (row: Int, col: Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -50,8 +53,8 @@ fun GameCanvas(
         val shakeY = screenShake.offsetY
         translate(shakeX, shakeY) {
             drawMap(map, cellSize)
-            drawTowers(snapshot.towers, cellSize, selectedTowerId)
-            drawEnemies(snapshot.enemies, cellSize)
+            drawTowers(snapshot.towers, cellSize, selectedTowerId, spriteLoader, elapsedMs)
+            drawEnemies(snapshot.enemies, cellSize, spriteLoader, elapsedMs)
             drawProjectiles(snapshot.projectiles)
             drawParticles(particles)
         }

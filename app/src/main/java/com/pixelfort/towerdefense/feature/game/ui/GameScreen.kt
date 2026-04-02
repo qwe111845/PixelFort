@@ -30,13 +30,25 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.shape.RoundedCornerShape as RCS
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.pixelfort.towerdefense.core.util.SpriteAssetLoader
 import com.pixelfort.towerdefense.engine.GameState
 import com.pixelfort.towerdefense.engine.level.Levels
 import com.pixelfort.towerdefense.engine.model.MetaBonus
@@ -69,10 +81,14 @@ fun GameScreen(
         }
     }
 
+    val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    val navBarPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFF0A0A1A))
+            .padding(top = statusBarPadding, bottom = navBarPadding)
     ) {
         // Calculate cell size so map fits on screen with HUD space reserved
         val hudHeightDp = 160.dp
@@ -133,6 +149,8 @@ fun GameScreen(
                             floatingTexts = state.floatingTexts,
                             screenShake = state.screenShake,
                             selectedTowerId = state.selectedTowerId,
+                            spriteLoader = viewModel.spriteLoader,
+                            elapsedMs = state.elapsedMs,
                             onCellTapped = viewModel::onCellTapped,
                             modifier = Modifier.size(gameWidthDp, gameHeightDp)
                         )
@@ -165,7 +183,8 @@ fun GameScreen(
                         onShowTooltip = { towerType ->
                             tooltipTower = towerType
                             tooltipMetaBonus = state.metaBonus
-                        }
+                        },
+                        spriteLoader = viewModel.spriteLoader
                     )
                 }
             }
@@ -241,6 +260,7 @@ fun GameScreen(
             FloatingTowerTooltip(
                 towerType = tt,
                 metaBonus = tooltipMetaBonus,
+                spriteLoader = (uiState as? GameUiState.Playing)?.let { viewModel.spriteLoader },
                 onDismiss = { tooltipTower = null },
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
@@ -380,6 +400,15 @@ private fun GameEndOverlay(
     onBack: () -> Unit,
     onGoToUpgrades: () -> Unit
 ) {
+    val context = LocalContext.current
+    val illustration = remember(isVictory) {
+        val filename = if (isVictory) "sprites/extras/result_victory.png" else "sprites/extras/result_defeat.png"
+        try {
+            context.assets.open(filename).use { stream ->
+                android.graphics.BitmapFactory.decodeStream(stream)?.asImageBitmap()
+            }
+        } catch (_: Exception) { null }
+    }
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -393,6 +422,20 @@ private fun GameEndOverlay(
                 .background(Color(0xFF1A1A2E), RoundedCornerShape(20.dp))
                 .padding(32.dp)
         ) {
+            // Result illustration
+            illustration?.let { bmp ->
+                Image(
+                    bitmap = bmp,
+                    contentDescription = if (isVictory) "Victory" else "Defeat",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(16f / 9f)
+                        .clip(RoundedCornerShape(12.dp))
+                )
+                Spacer(Modifier.height(12.dp))
+            }
+
             Text(
                 text = if (isVictory) "🏆 勝利！" else "💀 失敗",
                 color = if (isVictory) Color(0xFFFFD700) else Color(0xFFEF5350),
@@ -517,6 +560,7 @@ private fun TowerInfoPopup(
 private fun FloatingTowerTooltip(
     towerType: TowerType,
     metaBonus: MetaBonus,
+    spriteLoader: SpriteAssetLoader? = null,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -573,6 +617,47 @@ private fun FloatingTowerTooltip(
                 Text("🎯 ${"%.1f".format(stats.range)}", color = Color(0xFF42A5F5), fontSize = 12.sp, fontWeight = FontWeight.Medium)
                 Text("⚡ ${stats.fireRateMs}ms", color = Color(0xFFFFEE58), fontSize = 12.sp, fontWeight = FontWeight.Medium)
                 Text("💰 ${towerType.baseCost}g", color = Color(0xFFFFD700), fontSize = 12.sp, fontWeight = FontWeight.Medium)
+            }
+
+            // Level preview: show Lv1 → Lv2 → Lv3 sprites
+            if (spriteLoader != null) {
+                Spacer(Modifier.height(10.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    for (lv in 1..3) {
+                        val lvSprite = spriteLoader.getTowerSprite(towerType, lv)
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            if (lvSprite != null) {
+                                Image(
+                                    bitmap = lvSprite,
+                                    contentDescription = "Lv$lv",
+                                    contentScale = ContentScale.Fit,
+                                    modifier = Modifier.size(56.dp)
+                                )
+                            } else {
+                                Box(
+                                    modifier = Modifier
+                                        .size(56.dp)
+                                        .background(Color(0xFF222244), RoundedCornerShape(4.dp)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text("Lv$lv", color = Color.Gray, fontSize = 10.sp)
+                                }
+                            }
+                            Text(
+                                text = "Lv$lv",
+                                color = Color(0xFFAABBCC),
+                                fontSize = 10.sp
+                            )
+                        }
+                        if (lv < 3) {
+                            Text("→", color = Color(0xFF556677), fontSize = 16.sp)
+                        }
+                    }
+                }
             }
         }
     }

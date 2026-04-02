@@ -5,23 +5,49 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
+import com.pixelfort.towerdefense.core.util.SpriteAssetLoader
 import com.pixelfort.towerdefense.engine.model.Enemy
 import com.pixelfort.towerdefense.engine.model.EnemyType
 
 object EnemyRenderer {
 
-    fun DrawScope.drawEnemies(enemies: List<Enemy>, cellSize: Float) {
+    fun DrawScope.drawEnemies(
+        enemies: List<Enemy>,
+        cellSize: Float,
+        spriteLoader: SpriteAssetLoader? = null,
+        elapsedMs: Long = 0L
+    ) {
         for (enemy in enemies) {
             val sc = cellSize / 10f * enemy.type.size
             val cx = enemy.pixelX
             val cy = enemy.pixelY
 
-            when (enemy.type) {
-                EnemyType.GOBLIN  -> drawGoblin(cx, cy, sc)
-                EnemyType.ORC     -> drawOrc(cx, cy, sc)
-                EnemyType.DRAGON  -> drawDragon(cx, cy, sc)
-                EnemyType.TROLL   -> drawTroll(cx, cy, sc)
-                EnemyType.SPECTER -> drawSpecter(cx, cy, sc)
+            // Use consistent single frame per enemy (frame 1)
+            val sprite = spriteLoader?.getEnemySprite(enemy.type, 1)
+
+            if (sprite != null) {
+                val spriteSize = (cellSize * enemy.type.size * 0.85f).toInt()
+                drawImage(
+                    image = sprite,
+                    srcOffset = IntOffset.Zero,
+                    srcSize = IntSize(sprite.width, sprite.height),
+                    dstOffset = IntOffset(
+                        (cx - spriteSize / 2f).toInt(),
+                        (cy - spriteSize / 2f).toInt()
+                    ),
+                    dstSize = IntSize(spriteSize, spriteSize)
+                )
+            } else {
+                // Fallback: procedural pixel art
+                when (enemy.type) {
+                    EnemyType.GOBLIN  -> drawGoblin(cx, cy, sc)
+                    EnemyType.ORC     -> drawOrc(cx, cy, sc)
+                    EnemyType.DRAGON  -> drawDragon(cx, cy, sc)
+                    EnemyType.TROLL   -> drawTroll(cx, cy, sc)
+                    EnemyType.SPECTER -> drawSpecter(cx, cy, sc)
+                }
             }
 
             // Slow frost tint overlay
