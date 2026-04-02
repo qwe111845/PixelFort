@@ -21,4 +21,10 @@ sealed interface Routes {
 
     @Serializable
     data object MetaUpgrade : Routes
+
+    @Serializable
+    data object Bestiary : Routes
+
+    @Serializable
+    data class BestiaryDetail(val enemyType: String) : Routes
 }

@@ -60,6 +60,7 @@ import com.pixelfort.towerdefense.core.datastore.GameplaySettingsData
 import com.pixelfort.towerdefense.feature.game.tutorial.TutorialOverlay
 import com.pixelfort.towerdefense.feature.game.viewmodel.GameUiState
 import com.pixelfort.towerdefense.feature.game.viewmodel.GameViewModel
+import android.widget.Toast
 import kotlinx.coroutines.delay
 
 @Composable
@@ -73,6 +74,17 @@ fun GameScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val gameplaySettings by viewModel.gameplaySettingsFlow.collectAsStateWithLifecycle(initialValue = GameplaySettingsData())
+    val bestiaryToast by viewModel.bestiaryToast.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+
+    // SPEC-031: Show bestiary unlock toast
+    LaunchedEffect(bestiaryToast) {
+        bestiaryToast?.let { msg ->
+            Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+            viewModel.clearBestiaryToast()
+        }
+    }
+
     val levelDef = Levels.getById(levelId)
     val map = levelDef.map
     val cellEffects = levelDef.cellEffects

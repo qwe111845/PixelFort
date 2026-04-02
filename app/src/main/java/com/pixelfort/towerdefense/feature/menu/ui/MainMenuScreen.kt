@@ -29,7 +29,8 @@ import androidx.compose.ui.unit.sp
 @Composable
 fun MainMenuScreen(
     onStartGame: () -> Unit,
-    onSettings: () -> Unit
+    onSettings: () -> Unit,
+    onBestiary: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val bgBitmap = remember {
@@ -84,6 +85,14 @@ fun MainMenuScreen(
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF9800))
             ) {
                 Text("START GAME", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+            Button(
+                onClick = onBestiary,
+                modifier = Modifier.fillMaxWidth(0.6f).height(48.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF7B1FA2))
+            ) {
+                Text("Bestiary", fontSize = 16.sp, fontWeight = FontWeight.Bold)
             }
             Spacer(modifier = Modifier.height(16.dp))
             Button(
